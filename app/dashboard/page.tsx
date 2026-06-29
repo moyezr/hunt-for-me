@@ -1,5 +1,6 @@
 import { DashboardActions } from "@/app/dashboard/dashboard-actions";
 import { JobStatusSelect } from "@/app/dashboard/job-status-select";
+import { ManualJobForm } from "@/app/dashboard/manual-job-form";
 import { getJobs } from "@/lib/db";
 
 export default function DashboardPage() {
@@ -17,6 +18,8 @@ export default function DashboardPage() {
       </div>
 
       <DashboardActions />
+
+      <ManualJobForm />
 
       <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white">
         <table className="w-full border-collapse text-left text-sm">
