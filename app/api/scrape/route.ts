@@ -17,7 +17,9 @@ export async function POST(request: Request) {
     return jsonOk({
       jobs: result.saved,
       skippedLowFit: result.skippedLowFit.length,
+      duplicates: result.duplicates.length,
       errors: result.errors,
+      scanned: result.scanned,
     });
   } catch (error) {
     return jsonError(

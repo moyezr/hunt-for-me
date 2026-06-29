@@ -117,6 +117,11 @@ test("scores matching AI engineering jobs above scraper threshold", () => {
   assert.ok(result.score >= 6);
 });
 
+test("scores unrelated jobs below scraper save threshold", () => {
+  const result = scoreJob("Restaurant manager role with inventory scheduling.");
+  assert.ok(result.score < 6);
+});
+
 test("profile is present and not empty", () => {
   const profilePath = path.join(process.cwd(), "data", "profile.json");
   const profile = JSON.parse(fs.readFileSync(profilePath, "utf8")) as {

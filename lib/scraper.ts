@@ -23,7 +23,9 @@ export type ScrapedJob = {
 export type ScrapeResult = {
   saved: Job[];
   skippedLowFit: ScrapedJob[];
+  duplicates: Job[];
   errors: { platform: ScrapePlatform; error: string }[];
+  scanned: number;
 };
 
 type RawScrapedJob = Omit<ScrapedJob, "fitScore">;
@@ -247,18 +249,26 @@ export async function scrapeJobs(input: ScrapeInput): Promise<ScrapeResult> {
   const normalized = normalizeQuery(input);
   const saved: Job[] = [];
   const skippedLowFit: ScrapedJob[] = [];
+  const duplicates: Job[] = [];
   const errors: ScrapeResult["errors"] = [];
+  let scanned = 0;
 
   for (const platform of normalized.platforms) {
     try {
       const jobs = await scrapePlatform(platformConfigs[platform], normalized);
+      scanned += jobs.length;
       for (const job of jobs) {
         if (job.fitScore < 6) {
           skippedLowFit.push(job);
           continue;
         }
 
-        saved.push(createJob(job).job);
+        const created = createJob(job);
+        if (created.duplicate) {
+          duplicates.push(created.job);
+        } else {
+          saved.push(created.job);
+        }
       }
     } catch (error) {
       errors.push({
@@ -270,5 +280,5 @@ export async function scrapeJobs(input: ScrapeInput): Promise<ScrapeResult> {
     await randomDelay();
   }
 
-  return { saved, skippedLowFit, errors };
+  return { saved, skippedLowFit, duplicates, errors, scanned };
 }
