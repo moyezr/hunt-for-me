@@ -272,14 +272,37 @@ export function getContacts() {
   return rows.map(toContact);
 }
 
-export function countContactsToday(platform: string, status: ContactStatus) {
+export function countSentMessagesToday(
+  platform: string,
+  channel: OutreachMessage["channel"],
+) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  const followUpStart = new Date(start);
+  followUpStart.setDate(followUpStart.getDate() + 3);
+  const followUpEnd = new Date(end);
+  followUpEnd.setDate(followUpEnd.getDate() + 3);
   const row = getDb()
     .prepare(
-      "SELECT COUNT(*) AS count FROM contacts WHERE platform = ? AND status = ? AND created_at >= ?",
+      `SELECT COUNT(*) AS count
+      FROM contacts
+      WHERE platform = ?
+        AND status = 'sent'
+        AND message_history LIKE ?
+        AND (
+          created_at >= ?
+          OR (follow_up_date >= ? AND follow_up_date < ?)
+        )`,
     )
-    .get(platform, status, start.toISOString()) as { count: number };
+    .get(
+      platform,
+      `%"channel":"${channel}"%`,
+      start.toISOString(),
+      followUpStart.toISOString(),
+      followUpEnd.toISOString(),
+    ) as { count: number };
 
   return row.count;
 }

@@ -1,5 +1,5 @@
 import { generateOutreach } from "@/lib/ai";
-import { countContactsToday, createContact } from "@/lib/db";
+import { countSentMessagesToday, createContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (
       markSent &&
       channel === "linkedin_note" &&
-      countContactsToday(platform, "sent") >= 15
+      countSentMessagesToday(platform, "linkedin_note") >= 15
     ) {
       return jsonError("LinkedIn connection request daily cap reached", 429);
     }
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     if (
       markSent &&
       channel === "linkedin_dm" &&
-      countContactsToday(platform, "sent") >= 10
+      countSentMessagesToday(platform, "linkedin_dm") >= 10
     ) {
       return jsonError("LinkedIn DM daily cap reached", 429);
     }

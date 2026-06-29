@@ -1,5 +1,5 @@
 import { OutreachBatch } from "@/app/outreach/outreach-batch";
-import { getContacts } from "@/lib/db";
+import { countSentMessagesToday, getContacts } from "@/lib/db";
 
 export default function OutreachPage() {
   const contacts = getContacts();
@@ -7,6 +7,8 @@ export default function OutreachPage() {
     (contact) =>
       contact.followUpDate && new Date(contact.followUpDate) <= new Date(),
   );
+  const linkedinNotesSent = countSentMessagesToday("linkedin", "linkedin_note");
+  const linkedinDmsSent = countSentMessagesToday("linkedin", "linkedin_dm");
 
   return (
     <main className="mx-auto grid max-w-7xl gap-6 px-5 py-8">
@@ -17,6 +19,21 @@ export default function OutreachPage() {
           intentionally excluded.
         </p>
       </div>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+          <p className="text-sm text-[var(--muted)]">LinkedIn notes today</p>
+          <p className="mt-1 text-2xl font-semibold">{linkedinNotesSent}/15</p>
+        </div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+          <p className="text-sm text-[var(--muted)]">LinkedIn DMs today</p>
+          <p className="mt-1 text-2xl font-semibold">{linkedinDmsSent}/10</p>
+        </div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+          <p className="text-sm text-[var(--muted)]">Follow-ups due</p>
+          <p className="mt-1 text-2xl font-semibold">{due.length}</p>
+        </div>
+      </section>
 
       <OutreachBatch />
 

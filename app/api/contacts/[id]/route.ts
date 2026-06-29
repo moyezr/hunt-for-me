@@ -1,4 +1,4 @@
-import { countContactsToday, getContact, updateContact } from "@/lib/db";
+import { countSentMessagesToday, getContact, updateContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { ContactStatus } from "@/lib/types";
@@ -21,14 +21,14 @@ export async function PATCH(
       const channel = contact.messageHistory.at(-1)?.channel;
       if (
         channel === "linkedin_note" &&
-        countContactsToday(contact.platform, "sent") >= 15
+        countSentMessagesToday(contact.platform, "linkedin_note") >= 15
       ) {
         return jsonError("LinkedIn connection request daily cap reached", 429);
       }
 
       if (
         channel === "linkedin_dm" &&
-        countContactsToday(contact.platform, "sent") >= 10
+        countSentMessagesToday(contact.platform, "linkedin_dm") >= 10
       ) {
         return jsonError("LinkedIn DM daily cap reached", 429);
       }
