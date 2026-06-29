@@ -2,6 +2,7 @@ import { updateJob } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { JobStatus } from "@/lib/types";
+import { isJobStatus } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,10 @@ export async function PATCH(
       status?: JobStatus;
       notes?: string;
     }>(request);
+
+    if (body.status && !isJobStatus(body.status)) {
+      return jsonError("Invalid job status", 400);
+    }
 
     return jsonOk({
       job: updateJob({

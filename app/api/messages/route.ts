@@ -3,6 +3,7 @@ import { addMessageToContact, createContact, getContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
+import { isOutreachChannel } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,10 @@ export async function POST(request: Request) {
       contacts?: BatchContact[];
       channel?: OutreachMessage["channel"];
     }>(request);
+
+    if (body.channel && !isOutreachChannel(body.channel)) {
+      return jsonError("Invalid outreach channel", 400);
+    }
 
     const channel = body.channel ?? "linkedin_note";
     const contacts = body.contacts ?? [];

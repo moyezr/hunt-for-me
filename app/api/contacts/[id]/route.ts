@@ -2,6 +2,7 @@ import { countSentMessagesToday, getContact, updateContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { ContactStatus } from "@/lib/types";
+import { isContactStatus } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,10 @@ export async function PATCH(
       status?: ContactStatus;
       messageBody?: string;
     }>(request);
+
+    if (body.status && !isContactStatus(body.status)) {
+      return jsonError("Invalid contact status", 400);
+    }
 
     if (body.status === "sent") {
       const channel = contact.messageHistory.at(-1)?.channel;

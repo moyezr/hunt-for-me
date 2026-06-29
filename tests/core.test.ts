@@ -25,6 +25,11 @@ import { getNextApplicationJobs, getPipelineSummary } from "@/lib/pipeline";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
 import type { Contact, Job } from "@/lib/types";
+import {
+  isContactStatus,
+  isJobStatus,
+  isOutreachChannel,
+} from "@/lib/validation";
 
 test("classifies salary questions", () => {
   assert.equal(classifyQuestion("What is your expected CTC?"), "salary");
@@ -145,6 +150,15 @@ test("outreach template validation requires every channel", () => {
     validateOutreachTemplates({ globalRules: [], channels: {} }),
     false,
   );
+});
+
+test("validates API status and outreach channel enums", () => {
+  assert.equal(isJobStatus("applied"), true);
+  assert.equal(isJobStatus("submitted"), false);
+  assert.equal(isContactStatus("follow_up_due"), true);
+  assert.equal(isContactStatus("archived"), false);
+  assert.equal(isOutreachChannel("linkedin_dm"), true);
+  assert.equal(isOutreachChannel("sms"), false);
 });
 
 test("removes salary language from outreach messages", () => {

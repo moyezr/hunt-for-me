@@ -180,6 +180,12 @@ if (appliedJob.job.status !== "applied" || !appliedJob.job.appliedAt) {
 }
 
 await apiFailure(
+  `/api/jobs/${createdJob.job.id}`,
+  patchJson({ status: "submitted" }),
+  400,
+);
+
+await apiFailure(
   "/api/jobs",
   postJson({
     title: `Runtime Smoke Engineer ${suffix}`,
@@ -228,6 +234,12 @@ if (
 if (/12\s*[–-]\s*18\s*LPA/i.test(drafted.message.body)) {
   throw new Error("Outreach message mentioned salary");
 }
+
+await apiFailure(
+  `/api/contacts/${contact.id}/message`,
+  postJson({ channel: "sms" }),
+  400,
+);
 
 const duplicateDraft = await api<{
   contact: { id: string; status: string; messageHistory: unknown[] };

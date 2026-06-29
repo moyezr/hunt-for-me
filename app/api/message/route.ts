@@ -3,6 +3,7 @@ import { countSentMessagesToday, createContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
+import { isOutreachChannel } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
 
     if (!body.name?.trim() || !body.title?.trim() || !body.company?.trim()) {
       return jsonError("Name, title, and company are required", 400);
+    }
+
+    if (body.channel && !isOutreachChannel(body.channel)) {
+      return jsonError("Invalid outreach channel", 400);
     }
 
     const channel = body.channel ?? "linkedin_note";
