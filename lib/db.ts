@@ -211,6 +211,31 @@ export function getJob(id: string) {
   return toJob(row);
 }
 
+export function updateJob(input: {
+  id: string;
+  status?: JobStatus;
+  notes?: string;
+}) {
+  const job = getJob(input.id);
+  const appliedAt =
+    input.status === "applied" && job.appliedAt === null
+      ? new Date().toISOString()
+      : job.appliedAt;
+
+  getDb()
+    .prepare(
+      "UPDATE jobs SET status = ?, notes = ?, applied_at = ? WHERE id = ?",
+    )
+    .run(
+      input.status ?? job.status,
+      input.notes ?? job.notes,
+      appliedAt,
+      input.id,
+    );
+
+  return getJob(input.id);
+}
+
 export function saveAnswerForJob(params: {
   company: string;
   title: string;

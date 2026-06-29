@@ -9,6 +9,39 @@ type Draft = {
   message: OutreachMessage;
 };
 
+type QueueContact = {
+  name: string;
+  title: string;
+  company: string;
+  companyContext: string;
+  profileUrl: string;
+};
+
+function parseQueue(raw: string) {
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [
+        name = "",
+        title = "",
+        company = "",
+        companyContext = "",
+        profileUrl = "",
+      ] = line.split("|").map((part) => part.trim());
+
+      return {
+        name,
+        title,
+        company,
+        companyContext,
+        profileUrl,
+      };
+    })
+    .filter((contact) => contact.name && contact.title && contact.company);
+}
+
 export function OutreachBatch() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -18,12 +51,63 @@ export function OutreachBatch() {
   const [channel, setChannel] =
     useState<OutreachMessage["channel"]>("linkedin_note");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [queueText, setQueueText] = useState("");
+  const [queue, setQueue] = useState<QueueContact[]>([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [sentCount, setSentCount] = useState(0);
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  function activeQueueContact(nextQueue = queue, nextIndex = queueIndex) {
+    return nextQueue[nextIndex] ?? null;
+  }
+
+  function loadQueue() {
+    const parsed = parseQueue(queueText);
+    setQueue(parsed);
+    setQueueIndex(0);
+    setSentCount(0);
+    setDraft(null);
+
+    const first = parsed[0];
+    if (first) {
+      setName(first.name);
+      setTitle(first.title);
+      setCompany(first.company);
+      setCompanyContext(first.companyContext);
+      setStatus(`${parsed.length} contact(s) queued.`);
+    } else {
+      setStatus(
+        "Paste rows as: name | title | company | context | profile URL",
+      );
+    }
+  }
+
+  function loadContact(contact: QueueContact | null) {
+    setName(contact?.name ?? "");
+    setTitle(contact?.title ?? "");
+    setCompany(contact?.company ?? "");
+    setCompanyContext(contact?.companyContext ?? "");
+  }
+
+  function advanceQueue(nextSentCount = sentCount) {
+    const nextIndex = queueIndex + 1;
+    setQueueIndex(nextIndex);
+    const nextContact = activeQueueContact(queue, nextIndex);
+    loadContact(nextContact);
+    setDraft(null);
+
+    if (nextContact) {
+      setStatus(`Next: ${nextContact.name} at ${nextContact.company}`);
+    } else if (queue.length > 0) {
+      setStatus(`Batch complete. ${nextSentCount} marked sent.`);
+    }
+  }
 
   async function draftMessage() {
     setIsLoading(true);
     setStatus("Drafting message...");
+    const queuedContact = activeQueueContact();
 
     try {
       const response = await fetch("/api/message", {
@@ -36,6 +120,7 @@ export function OutreachBatch() {
           companyContext,
           channel,
           platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
+          profileUrl: queuedContact?.profileUrl ?? "",
         }),
       });
       const payload = await response.json();
@@ -87,11 +172,9 @@ export function OutreachBatch() {
       }
 
       setStatus("Marked sent. Follow-up set for 3 days from now.");
-      setDraft(null);
-      setName("");
-      setTitle("");
-      setCompany("");
-      setCompanyContext("");
+      const nextSentCount = sentCount + 1;
+      setSentCount(nextSentCount);
+      advanceQueue(nextSentCount);
       router.refresh();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not mark sent");
@@ -101,8 +184,31 @@ export function OutreachBatch() {
   }
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[380px_1fr]">
+    <section className="grid gap-4 lg:grid-cols-[420px_1fr]">
       <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-white p-4">
+        <label className="grid gap-1 text-sm">
+          Batch queue
+          <textarea
+            className="min-h-28 rounded-md border border-[var(--line)] px-3 py-2"
+            onChange={(event) => setQueueText(event.target.value)}
+            placeholder="Name | Title | Company | Company context | Profile URL"
+            value={queueText}
+          />
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium"
+            onClick={loadQueue}
+            type="button"
+          >
+            Load queue
+          </button>
+          <span className="text-sm text-[var(--muted)]">
+            {queue.length > 0
+              ? `${queueIndex + 1 > queue.length ? queue.length : queueIndex + 1}/${queue.length} · ${sentCount} sent`
+              : "No queue loaded"}
+          </span>
+        </div>
         <label className="grid gap-1 text-sm">
           Name
           <input
@@ -152,7 +258,7 @@ export function OutreachBatch() {
         </label>
         <button
           className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white disabled:bg-[#a0a7b7]"
-          disabled={isLoading}
+          disabled={isLoading || !name || !title || !company}
           onClick={draftMessage}
           type="button"
         >
@@ -195,6 +301,14 @@ export function OutreachBatch() {
             type="button"
           >
             Mark sent
+          </button>
+          <button
+            className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium disabled:text-[#a0a7b7]"
+            disabled={queue.length === 0 || queueIndex >= queue.length}
+            onClick={() => advanceQueue()}
+            type="button"
+          >
+            Skip
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { DashboardActions } from "@/app/dashboard/dashboard-actions";
+import { JobStatusSelect } from "@/app/dashboard/job-status-select";
 import { getJobs } from "@/lib/db";
 
 export default function DashboardPage() {
@@ -37,9 +38,7 @@ export default function DashboardPage() {
                 <td className="px-4 py-3">{job.platform}</td>
                 <td className="px-4 py-3">{job.fitScore ?? "-"}</td>
                 <td className="px-4 py-3">
-                  <span className="rounded-full bg-[#e7f6f3] px-2 py-1 text-xs font-medium text-[var(--accent-strong)]">
-                    {job.status}
-                  </span>
+                  <JobStatusSelect jobId={job.id} status={job.status} />
                 </td>
                 <td className="px-4 py-3 text-[var(--muted)]">
                   {new Date(job.createdAt).toLocaleDateString()}
