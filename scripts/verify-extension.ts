@@ -246,6 +246,13 @@ try {
 
   const popupPage = await browser.newPage();
   const popupApiRequests: string[] = [];
+  const popupJobSaves: {
+    title: string;
+    company: string;
+    url: string;
+    platform: string;
+    status: string;
+  }[] = [];
   let popupFillAnswers: { selector: string; answer: string }[] = [];
   await popupPage.exposeFunction("hfmMockSendMessage", (message: unknown) => {
     const typedMessage = message as {
@@ -359,6 +366,34 @@ try {
       return;
     }
 
+    if (url.pathname === "/api/jobs") {
+      const requestBody = route.request().postDataJSON() as {
+        title: string;
+        company: string;
+        url: string;
+        platform: string;
+        status: string;
+      };
+      popupJobSaves.push(requestBody);
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          data: {
+            job: {
+              id: "job_popup",
+              ...requestBody,
+              appliedAt:
+                requestBody.status === "applied"
+                  ? new Date().toISOString()
+                  : null,
+            },
+          },
+        }),
+      });
+      return;
+    }
+
     await route.fulfill({
       status: 404,
       contentType: "application/json",
@@ -400,6 +435,43 @@ try {
   }
   if (popupApiRequests.includes("/api/answer")) {
     throw new Error("Popup called single-answer endpoint during batch scan");
+  }
+
+  if (await popupPage.locator("#saveJobButton").isDisabled()) {
+    throw new Error("Save job button was not enabled after scanning context");
+  }
+  await popupPage.locator("#saveJobButton").click();
+  await popupPage
+    .locator("#status")
+    .getByText("Job saved to dashboard")
+    .waitFor();
+
+  if (await popupPage.locator("#markAppliedButton").isDisabled()) {
+    throw new Error(
+      "Mark applied button was not enabled after scanning context",
+    );
+  }
+  await popupPage.locator("#markAppliedButton").click();
+  await popupPage
+    .locator("#status")
+    .getByText("Marked applied in dashboard")
+    .waitFor();
+
+  const discoveredSave = popupJobSaves.find(
+    (save) => save.status === "discovered",
+  );
+  const appliedSave = popupJobSaves.find((save) => save.status === "applied");
+  if (!discoveredSave || !appliedSave) {
+    throw new Error(
+      "Popup did not save both discovered and applied job states",
+    );
+  }
+  if (
+    discoveredSave.company !== "SignalWorks AI" ||
+    discoveredSave.title !== "Applied AI Engineer" ||
+    discoveredSave.platform !== "naukri"
+  ) {
+    throw new Error("Popup saved incorrect discovered job context");
   }
 
   const popupAnswers = await popupPage
