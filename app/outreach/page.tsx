@@ -1,4 +1,5 @@
 import { ContactImport } from "@/app/outreach/contact-import";
+import { ContactStatusSelect } from "@/app/outreach/contact-status-select";
 import { OutreachBatch } from "@/app/outreach/outreach-batch";
 import { OutreachTemplateEditor } from "@/app/outreach/outreach-template-editor";
 import { countSentMessagesToday, getContacts } from "@/lib/db";
@@ -9,7 +10,10 @@ export default function OutreachPage() {
   const templates = getOutreachTemplates();
   const due = contacts.filter(
     (contact) =>
-      contact.followUpDate && new Date(contact.followUpDate) <= new Date(),
+      contact.followUpDate &&
+      new Date(contact.followUpDate) <= new Date() &&
+      contact.status !== "responded" &&
+      contact.status !== "closed",
   );
   const linkedinNotesSent = countSentMessagesToday("linkedin", "linkedin_note");
   const linkedinDmsSent = countSentMessagesToday("linkedin", "linkedin_dm");
@@ -65,11 +69,17 @@ export default function OutreachPage() {
                 <p className="font-medium">
                   {contact.name} · {contact.company}
                 </p>
-                <span className="text-sm text-[var(--muted)]">
-                  {contact.followUpDate
-                    ? new Date(contact.followUpDate).toLocaleDateString()
-                    : "No date"}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-[var(--muted)]">
+                    {contact.followUpDate
+                      ? new Date(contact.followUpDate).toLocaleDateString()
+                      : "No date"}
+                  </span>
+                  <ContactStatusSelect
+                    contactId={contact.id}
+                    status={contact.status}
+                  />
+                </div>
               </div>
               <p className="text-sm text-[var(--muted)]">
                 {contact.title} · {contact.status}
@@ -101,9 +111,10 @@ export default function OutreachPage() {
                 <p className="font-medium">
                   {contact.name} · {contact.company}
                 </p>
-                <span className="text-sm text-[var(--muted)]">
-                  {contact.status}
-                </span>
+                <ContactStatusSelect
+                  contactId={contact.id}
+                  status={contact.status}
+                />
               </div>
               <p className="text-sm text-[var(--muted)]">{contact.title}</p>
               <p className="text-sm">{contact.messageHistory.at(-1)?.body}</p>

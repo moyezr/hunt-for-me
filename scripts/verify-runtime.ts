@@ -324,7 +324,8 @@ if (!contactsCsv.includes(contact.id)) {
 const outreachHtml = await text("/outreach");
 if (
   !outreachHtml.includes("Follow-ups due") ||
-  !outreachHtml.includes("Load follow-ups due")
+  !outreachHtml.includes("Load follow-ups due") ||
+  !outreachHtml.includes("Contact status")
 ) {
   throw new Error("Outreach page did not render follow-up queue controls");
 }
