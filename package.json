@@ -11,7 +11,8 @@
     "format": "biome check --write .",
     "test": "bun test",
     "test:node": "tsx --test tests/*.test.ts",
-    "build:extension": "tsx scripts/build-extension.ts"
+    "build:extension": "tsx scripts/build-extension.ts",
+    "verify:extension": "npm run build:extension && tsx scripts/verify-extension.ts"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",

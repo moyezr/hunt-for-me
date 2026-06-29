@@ -5,6 +5,11 @@ import { getProfile } from "@/lib/profile";
 import type { AnswerRequest, AnswerResult, OutreachMessage } from "@/lib/types";
 
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
+const modelAliases: Record<string, string> = {
+  "gpt-5.5-min": "openai/gpt-5-mini",
+  "gpt-5.5-mini": "openai/gpt-5-mini",
+  "gpt-5-mini": "openai/gpt-5-mini",
+};
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -13,6 +18,11 @@ type ChatMessage = {
 
 function readPrompt(name: string) {
   return fs.readFileSync(path.join(process.cwd(), "prompts", name), "utf8");
+}
+
+function getOpenRouterModel() {
+  const configured = process.env.OPENROUTER_MODEL ?? "openai/gpt-5-mini";
+  return modelAliases[configured] ?? configured;
 }
 
 export function classifyQuestion(question: string) {
@@ -91,7 +101,7 @@ function fallbackAnswer(input: AnswerRequest) {
   const category = classifyQuestion(input.question);
 
   if (category === "salary") {
-    return "My expected compensation is 12-18 LPA, depending on the scope, ownership, and overall fit for the role.";
+    return "My expected compensation is 12–18 LPA, depending on the scope, ownership, and overall fit for the role.";
   }
 
   if (category === "why_leaving") {
@@ -120,6 +130,19 @@ function fallbackAnswer(input: AnswerRequest) {
   return `For the ${input.role} role at ${input.company}, the strongest overlap is my experience building production AI and full-stack systems. ${evidence}`;
 }
 
+export function enforceSalaryGuardrail(answer: string, category: string) {
+  if (category !== "salary") {
+    return answer;
+  }
+
+  const normalized = answer.replace(/12\s*[–-]\s*18\s*LPA/gi, "12–18 LPA");
+  if (normalized.includes("12–18 LPA")) {
+    return normalized;
+  }
+
+  return "My expected compensation is 12–18 LPA, depending on role scope and overall fit.";
+}
+
 async function callOpenRouter(messages: ChatMessage[]) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -137,7 +160,7 @@ async function callOpenRouter(messages: ChatMessage[]) {
       "X-Title": "Hunt For Me",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL ?? "gpt-5.5-min",
+      model: getOpenRouterModel(),
       messages,
       temperature: 0.4,
     }),
@@ -171,11 +194,23 @@ export async function generateAnswer(
   });
 
   if (cachedAnswer) {
+    const guardedCachedAnswer = enforceSalaryGuardrail(cachedAnswer, category);
+    if (guardedCachedAnswer !== cachedAnswer) {
+      saveAnswerForJob({
+        company: input.company,
+        title: input.role,
+        question: input.question,
+        answer: guardedCachedAnswer,
+        url: input.jobUrl,
+        jdText: input.jdText,
+      });
+    }
+
     return {
       category,
-      answer: cachedAnswer,
+      answer: guardedCachedAnswer,
       matchedKeywords: keywords.filter((keyword) =>
-        cachedAnswer.toLowerCase().includes(keyword.toLowerCase()),
+        guardedCachedAnswer.toLowerCase().includes(keyword.toLowerCase()),
       ),
       cached: true,
     };
@@ -203,18 +238,12 @@ export async function generateAnswer(
       { role: "user", content: userPrompt },
     ]);
   } catch (error) {
-    console.error(error);
+    console.warn(error instanceof Error ? error.message : error);
   }
 
   answer ??= fallbackAnswer(input);
 
-  if (category === "salary") {
-    answer = answer.replace(/12\s*[–-]\s*18\s*LPA/g, "12-18 LPA");
-    if (!answer.includes("12-18 LPA")) {
-      answer =
-        "My expected compensation is 12-18 LPA, depending on role scope and overall fit.";
-    }
-  }
+  answer = enforceSalaryGuardrail(answer, category);
 
   const matchedKeywords = keywords.filter((keyword) =>
     answer.toLowerCase().includes(keyword.toLowerCase()),
@@ -255,7 +284,7 @@ export async function generateOutreach(input: {
       { role: "user", content: userPrompt },
     ]);
   } catch (error) {
-    console.error(error);
+    console.warn(error instanceof Error ? error.message : error);
   }
 
   body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, from customer discovery to production. Open to a quick chat if ${input.title} or founder-led engineering roles are relevant.`;

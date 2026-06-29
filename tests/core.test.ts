@@ -3,12 +3,23 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { classifyQuestion, extractKeywords } from "@/lib/ai";
+import {
+  classifyQuestion,
+  enforceSalaryGuardrail,
+  extractKeywords,
+} from "@/lib/ai";
 import { createId } from "@/lib/id";
 import { scoreJob } from "@/lib/scraper";
 
 test("classifies salary questions", () => {
   assert.equal(classifyQuestion("What is your expected CTC?"), "salary");
+});
+
+test("normalizes salary answers to the required phrase", () => {
+  assert.equal(
+    enforceSalaryGuardrail("Expected CTC is 12-18 LPA.", "salary"),
+    "Expected CTC is 12–18 LPA.",
+  );
 });
 
 test("extracts useful JD keywords", () => {
