@@ -87,6 +87,14 @@ const suffix = Date.now();
 
 await api<{ status: string }>("/api/health");
 
+const homeHtml = await text("/");
+if (
+  !homeHtml.includes("Today") ||
+  !homeHtml.includes("Top application queue")
+) {
+  throw new Error("Home page did not render the daily operating cockpit");
+}
+
 await apiFailure(
   "/api/answer",
   postJson({

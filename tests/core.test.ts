@@ -13,6 +13,7 @@ import {
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
+import { getDailyPlan } from "@/lib/daily-plan";
 import { createId } from "@/lib/id";
 import {
   buildOutreachPrompt,
@@ -22,7 +23,7 @@ import {
 import { getNextApplicationJobs, getPipelineSummary } from "@/lib/pipeline";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
-import type { Job } from "@/lib/types";
+import type { Contact, Job } from "@/lib/types";
 
 test("classifies salary questions", () => {
   assert.equal(classifyQuestion("What is your expected CTC?"), "salary");
@@ -194,6 +195,28 @@ test("normalizes contact identity matching inputs", () => {
   assert.equal(contactIdentityKey(first), contactIdentityKey(second));
 });
 
+test("builds a daily job hunt operating plan", () => {
+  const plan = getDailyPlan({
+    jobs: [jobFixture({ id: "job_ready" })],
+    contacts: [
+      contactFixture({ id: "con_new", status: "new" }),
+      contactFixture({
+        id: "con_due",
+        status: "sent",
+        followUpDate: new Date(Date.now() - 1000).toISOString(),
+      }),
+    ],
+    linkedinNotesSent: 4,
+    linkedinDmsSent: 2,
+  });
+
+  assert.equal(plan.applications.readyToApply, 1);
+  assert.equal(plan.outreach.linkedinNotesRemaining, 11);
+  assert.equal(plan.outreach.linkedinDmsRemaining, 8);
+  assert.equal(plan.outreach.followUpsDue, 1);
+  assert.equal(plan.outreach.unsentContacts, 1);
+});
+
 test("test db isolation directory exists when needed", () => {
   assert.ok(fs.existsSync(os.tmpdir()));
 });
@@ -210,6 +233,23 @@ function jobFixture(overrides: Partial<Job>): Job {
     status: "discovered",
     answers: {},
     appliedAt: null,
+    notes: "",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function contactFixture(overrides: Partial<Contact>): Contact {
+  return {
+    id: "con_fixture",
+    name: "Asha Rao",
+    title: "Founder",
+    company: "SignalWorks",
+    platform: "linkedin",
+    profileUrl: "https://linkedin.com/in/asha",
+    status: "new",
+    messageHistory: [],
+    followUpDate: null,
     notes: "",
     createdAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
