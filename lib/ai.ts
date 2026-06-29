@@ -241,6 +241,22 @@ export function enforceSalaryGuardrail(answer: string, category: string) {
   return "My expected compensation is 12–18 LPA, depending on role scope and overall fit.";
 }
 
+export function enforceOutreachSalaryGuardrail(message: string) {
+  const salaryPattern =
+    /\b(salary|ctc|compensation|lpa|package|pay|expected comp)\b|12\s*[–-]\s*18/i;
+  const sentences = message.match(/[^.!?]+[.!?]?/g) ?? [message];
+  const cleaned = sentences
+    .filter((sentence) => !salaryPattern.test(sentence))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    cleaned ||
+    "I build AI and full-stack systems fast, stay close to customers, and can get useful without much ramp."
+  );
+}
+
 async function callOpenRouter(messages: ChatMessage[]) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -418,9 +434,11 @@ export async function generateOutreach(input: {
     "high-agency";
   body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, ${proofPoint}, and can get useful without much ramp. Open to a quick chat if ${input.title} or hands-on engineering roles are relevant?`;
 
+  body = enforceOutreachSalaryGuardrail(body);
+
   if (template.maxChars && body.length > template.maxChars) {
     body = `${body.slice(0, template.maxChars - 3).trimEnd()}...`;
   }
 
-  return body.replace(/12\s*[–-]\s*18\s*LPA/gi, "").trim();
+  return body;
 }

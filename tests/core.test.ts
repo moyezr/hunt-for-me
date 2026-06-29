@@ -7,6 +7,7 @@ import {
   classifyQuestion,
   deterministicProfileAnswer,
   enforceKeywordCoverage,
+  enforceOutreachSalaryGuardrail,
   enforceSalaryGuardrail,
   extractKeywords,
   extractProfileSkillKeywords,
@@ -144,6 +145,25 @@ test("outreach template validation requires every channel", () => {
     validateOutreachTemplates({ globalRules: [], channels: {} }),
     false,
   );
+});
+
+test("removes salary language from outreach messages", () => {
+  const message = enforceOutreachSalaryGuardrail(
+    "Hi Asha, noticed SignalWorks is hiring AI engineers. My expected CTC is 12-18 LPA. I ship production AI systems fast.",
+  );
+
+  assert.doesNotMatch(message, /salary|ctc|compensation|lpa|12/i);
+  assert.match(message, /SignalWorks/);
+  assert.match(message, /ship production AI systems fast/);
+});
+
+test("replaces fully unsafe outreach salary messages", () => {
+  const message = enforceOutreachSalaryGuardrail(
+    "Expected compensation is 12–18 LPA.",
+  );
+
+  assert.doesNotMatch(message, /salary|ctc|compensation|lpa|12/i);
+  assert.match(message, /AI and full-stack systems/);
 });
 
 test("prioritizes next applications by fit score", () => {
