@@ -108,6 +108,27 @@ if (!salary.answer.includes("12–18 LPA")) {
   throw new Error("Salary guardrail did not return 12–18 LPA");
 }
 
+const batchAnswers = await api<{
+  answers: { id: string; answer: string; category: string }[];
+}>(
+  "/api/answers",
+  postJson({
+    questions: [
+      { id: "name", question: "Full name" },
+      { id: "salary", question: "Expected CTC" },
+    ],
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+);
+if (
+  batchAnswers.answers.length !== 2 ||
+  batchAnswers.answers[0].answer !== "Moyez Rabbani" ||
+  !batchAnswers.answers[1].answer.includes("12–18 LPA")
+) {
+  throw new Error("Batch answers did not preserve order and guardrails");
+}
+
 const resume = await api<{
   resume: { filename: string; exists: boolean };
 }>(

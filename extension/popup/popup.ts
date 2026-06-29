@@ -76,7 +76,8 @@ function renderDrafts() {
     answersElement.append(wrapper);
   }
 
-  applyButton.disabled = drafts.length === 0;
+  applyButton.disabled =
+    drafts.length === 0 || drafts.some((draft) => draft.category === "loading");
 }
 
 function updateContextUi() {
@@ -130,21 +131,25 @@ async function recommendResume() {
   `;
 }
 
-async function getAnswer(field: DetectedField) {
+function questionForField(field: DetectedField) {
+  return field.options && field.options.length > 0
+    ? `${field.label}\nOptions: ${field.options.join(", ")}`
+    : field.label;
+}
+
+async function getAnswers(fields: DetectedField[]) {
   if (!context) {
     throw new Error("Missing page context");
   }
 
-  const question =
-    field.options && field.options.length > 0
-      ? `${field.label}\nOptions: ${field.options.join(", ")}`
-      : field.label;
-
-  const response = await fetch(`${apiBase}/api/answer`, {
+  const response = await fetch(`${apiBase}/api/answers`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      question,
+      questions: fields.map((field) => ({
+        id: field.id,
+        question: questionForField(field),
+      })),
       company: context.company,
       role: context.role,
       jdText: context.jdText,
@@ -154,14 +159,40 @@ async function getAnswer(field: DetectedField) {
 
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
-    throw new Error(payload.error ?? "Answer request failed");
+    throw new Error(payload.error ?? "Answer requests failed");
   }
 
-  return {
+  const answerById = new Map(
+    (
+      payload.data.answers as {
+        id: string;
+        answer: string;
+        category: string;
+      }[]
+    ).map((answer) => [answer.id, answer]),
+  );
+
+  return fields.map((field) => {
+    const answer = answerById.get(field.id);
+    if (!answer) {
+      throw new Error(`Missing answer for ${field.label}`);
+    }
+
+    return {
+      field,
+      answer: answer.answer,
+      category: answer.category,
+    };
+  });
+}
+
+function renderLoadingDrafts(fields: DetectedField[]) {
+  drafts = fields.map((field) => ({
     field,
-    answer: payload.data.answer as string,
-    category: payload.data.category as string,
-  };
+    answer: "Generating...",
+    category: "loading",
+  }));
+  renderDrafts();
 }
 
 async function saveCurrentJob(status: "discovered" | "applied") {
@@ -207,12 +238,11 @@ scanButton?.addEventListener("click", async () => {
     updateContextUi();
     await recommendResume();
 
-    setStatus(`Generating answers for ${fields.length} fields...`);
-    drafts = [];
-    for (const field of fields.slice(0, 12)) {
-      drafts.push(await getAnswer(field));
-      renderDrafts();
-    }
+    const answerFields = fields.slice(0, 12);
+    setStatus(`Generating answers for ${answerFields.length} fields...`);
+    renderLoadingDrafts(answerFields);
+    drafts = await getAnswers(answerFields);
+    renderDrafts();
 
     setStatus("Review and edit before applying. Nothing will be submitted.");
   } catch (error) {
