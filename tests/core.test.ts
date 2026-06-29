@@ -18,8 +18,10 @@ import {
   getOutreachTemplate,
   validateOutreachTemplates,
 } from "@/lib/outreach-templates";
+import { getNextApplicationJobs, getPipelineSummary } from "@/lib/pipeline";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
+import type { Job } from "@/lib/types";
 
 test("classifies salary questions", () => {
   assert.equal(classifyQuestion("What is your expected CTC?"), "salary");
@@ -137,6 +139,63 @@ test("outreach template validation requires every channel", () => {
   );
 });
 
+test("prioritizes next applications by fit score", () => {
+  const jobs = [
+    jobFixture({
+      id: "job_low",
+      fitScore: 6,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    }),
+    jobFixture({
+      id: "job_applied",
+      fitScore: 10,
+      status: "applied",
+      createdAt: "2026-01-03T00:00:00.000Z",
+    }),
+    jobFixture({
+      id: "job_high",
+      fitScore: 9,
+      createdAt: "2026-01-02T00:00:00.000Z",
+    }),
+  ];
+
+  assert.deepEqual(
+    getNextApplicationJobs(jobs).map((job) => job.id),
+    ["job_high", "job_low"],
+  );
+});
+
+test("summarizes daily application progress", () => {
+  const now = new Date().toISOString();
+  const summary = getPipelineSummary([
+    jobFixture({ id: "job_today", status: "applied", appliedAt: now }),
+    jobFixture({ id: "job_ready", fitScore: 9 }),
+  ]);
+
+  assert.equal(summary.appliedToday, 1);
+  assert.equal(summary.readyToApply, 1);
+  assert.equal(summary.highFit, 1);
+  assert.equal(summary.targetRemaining, 19);
+});
+
 test("test db isolation directory exists when needed", () => {
   assert.ok(fs.existsSync(os.tmpdir()));
 });
+
+function jobFixture(overrides: Partial<Job>): Job {
+  return {
+    id: "job_fixture",
+    title: "AI Engineer",
+    company: "Fixture Co",
+    url: "https://example.com",
+    platform: "test",
+    jdText: "",
+    fitScore: 7,
+    status: "discovered",
+    answers: {},
+    appliedAt: null,
+    notes: "",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
