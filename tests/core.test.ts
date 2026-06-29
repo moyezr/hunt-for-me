@@ -10,6 +10,7 @@ import {
   extractKeywords,
 } from "@/lib/ai";
 import { createId } from "@/lib/id";
+import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
 
 test("classifies salary questions", () => {
@@ -28,6 +29,17 @@ test("resolves deterministic profile answers without AI", () => {
     "moyezrabbani.work@gmail.com",
   );
   assert.equal(deterministicProfileAnswer("full_name"), "Moyez Rabbani");
+});
+
+test("recommends tailored resumes by role", () => {
+  assert.equal(
+    recommendResume({ role: "Applied AI Engineer" }).filename,
+    "AI_Engineer.pdf",
+  );
+  assert.equal(
+    recommendResume({ role: "Forward Deployed Engineer" }).filename,
+    "Forward_Deployed_Engineer.pdf",
+  );
 });
 
 test("normalizes salary answers to the required phrase", () => {

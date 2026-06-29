@@ -13,6 +13,9 @@ const applyButton = document.querySelector<HTMLButtonElement>("#applyButton");
 const answersElement = document.querySelector<HTMLElement>("#answers");
 const statusElement = document.querySelector<HTMLElement>("#status");
 const pageContextElement = document.querySelector<HTMLElement>("#pageContext");
+const resumeElement = document.querySelector<HTMLElement>(
+  "#resumeRecommendation",
+);
 
 let drafts: DraftAnswer[] = [];
 let context: PageContext | null = null;
@@ -85,6 +88,41 @@ function updateContextUi() {
   }
 }
 
+async function recommendResume() {
+  if (!context || !resumeElement) {
+    return;
+  }
+
+  const response = await fetch(`${apiBase}/api/resumes/recommend`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      role: context.role,
+      jdText: context.jdText,
+    }),
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload.ok) {
+    resumeElement.hidden = true;
+    return;
+  }
+
+  const resume = payload.data.resume as {
+    label: string;
+    filename: string;
+    reason: string;
+    exists: boolean;
+    relativePath: string;
+  };
+  resumeElement.hidden = false;
+  resumeElement.innerHTML = `
+    <strong>${resume.label} resume</strong>
+    <code>${resume.filename}</code>
+    <p>${resume.exists ? resume.relativePath : "File not found locally"}</p>
+  `;
+}
+
 async function getAnswer(field: DetectedField) {
   if (!context) {
     throw new Error("Missing page context");
@@ -125,6 +163,7 @@ scanButton?.addEventListener("click", async () => {
     const fields = scan.fields as DetectedField[];
 
     updateContextUi();
+    await recommendResume();
 
     setStatus(`Generating answers for ${fields.length} fields...`);
     drafts = [];

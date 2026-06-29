@@ -92,6 +92,25 @@ button:disabled {
   padding: 10px;
 }
 
+.resume {
+  background: #eef7f5;
+  border: 1px solid #b9dfd8;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.resume strong {
+  font-size: 12px;
+}
+
+.resume code {
+  color: #0b5f59;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .answer label {
   color: #181b23;
   font-size: 12px;
