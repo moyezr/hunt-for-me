@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   classifyQuestion,
+  deterministicProfileAnswer,
   enforceSalaryGuardrail,
   extractKeywords,
 } from "@/lib/ai";
@@ -13,6 +14,20 @@ import { scoreJob } from "@/lib/scraper";
 
 test("classifies salary questions", () => {
   assert.equal(classifyQuestion("What is your expected CTC?"), "salary");
+});
+
+test("classifies profile fields", () => {
+  assert.equal(classifyQuestion("Full name"), "full_name");
+  assert.equal(classifyQuestion("Email address"), "email");
+  assert.equal(classifyQuestion("LinkedIn profile"), "linkedin");
+});
+
+test("resolves deterministic profile answers without AI", () => {
+  assert.equal(
+    deterministicProfileAnswer("email"),
+    "moyezrabbani.work@gmail.com",
+  );
+  assert.equal(deterministicProfileAnswer("full_name"), "Moyez Rabbani");
 });
 
 test("normalizes salary answers to the required phrase", () => {

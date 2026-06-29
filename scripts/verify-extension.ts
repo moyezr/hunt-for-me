@@ -34,6 +34,14 @@ const fixtureHtml = `<!doctype html>
       </section>
       <form>
         <label>
+          Full name
+          <input id="full-name" type="text" />
+        </label>
+        <label>
+          Email address
+          <input id="email" type="email" />
+        </label>
+        <label>
           Why do you want to join SignalWorks AI?
           <textarea id="why-company"></textarea>
         </label>
@@ -102,8 +110,14 @@ try {
   const whyField = scan.fields.find((field) =>
     field.label.includes("Why do you want to join"),
   );
+  const nameField = scan.fields.find((field) =>
+    field.label.includes("Full name"),
+  );
   if (!whyField) {
     throw new Error("Expected application question field was not detected");
+  }
+  if (!nameField) {
+    throw new Error("Expected full-name field was not detected");
   }
 
   await page.evaluate(async (selector) => {
@@ -125,11 +139,28 @@ try {
     });
   }, whyField.selector);
 
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Moyez Rabbani" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, nameField.selector);
+
   const filled = await page.locator("#why-company").inputValue();
+  const fullName = await page.locator("#full-name").inputValue();
   const events = await page.evaluate(() => window.hfmEvents);
 
   if (!filled.includes("SignalWorks AI")) {
     throw new Error("Approved answer was not filled into the textarea");
+  }
+  if (fullName !== "Moyez Rabbani") {
+    throw new Error("Profile field was not filled into the input");
   }
 
   if (

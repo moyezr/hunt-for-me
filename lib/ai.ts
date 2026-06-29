@@ -27,6 +27,52 @@ function getOpenRouterModel() {
 
 export function classifyQuestion(question: string) {
   const text = question.toLowerCase();
+  const compact = text.replace(/[^a-z0-9]/g, "");
+
+  if (
+    text.includes("full name") ||
+    text === "name" ||
+    compact === "fullname" ||
+    compact === "candidateName".toLowerCase()
+  ) {
+    return "full_name";
+  }
+
+  if (text.includes("email") || text.includes("e-mail")) {
+    return "email";
+  }
+
+  if (
+    text.includes("phone") ||
+    text.includes("mobile") ||
+    text.includes("contact number")
+  ) {
+    return "phone";
+  }
+
+  if (text.includes("linkedin")) {
+    return "linkedin";
+  }
+
+  if (text.includes("github") || text.includes("git hub")) {
+    return "github";
+  }
+
+  if (
+    text.includes("portfolio") ||
+    text.includes("website") ||
+    text.includes("personal site")
+  ) {
+    return "website";
+  }
+
+  if (
+    text.includes("current location") ||
+    text.includes("preferred location") ||
+    text.includes("location preference")
+  ) {
+    return "location";
+  }
 
   if (
     text.includes("salary") ||
@@ -94,6 +140,31 @@ export function extractKeywords(text = "") {
         .filter((word) => word.length > 2 && !ignored.has(word)),
     ),
   ).slice(0, 12);
+}
+
+export function deterministicProfileAnswer(category: string) {
+  const profile = getProfile();
+
+  switch (category) {
+    case "full_name":
+      return profile.name;
+    case "email":
+      return profile.contact.email;
+    case "phone":
+      return profile.contact.phone;
+    case "linkedin":
+      return profile.contact.linkedin;
+    case "github":
+      return profile.contact.github;
+    case "website":
+      return profile.contact.website;
+    case "location":
+      return profile.locationPreferences.join(", ");
+    case "notice_period":
+      return profile.noticePeriod;
+    default:
+      return null;
+  }
 }
 
 function fallbackAnswer(input: AnswerRequest) {
@@ -187,6 +258,26 @@ export async function generateAnswer(
 
   const category = classifyQuestion(input.question);
   const keywords = extractKeywords(input.jdText);
+  const deterministicAnswer = deterministicProfileAnswer(category);
+
+  if (deterministicAnswer) {
+    saveAnswerForJob({
+      company: input.company,
+      title: input.role,
+      question: input.question,
+      answer: deterministicAnswer,
+      url: input.jobUrl,
+      jdText: input.jdText,
+    });
+
+    return {
+      category,
+      answer: deterministicAnswer,
+      matchedKeywords: [],
+      cached: false,
+    };
+  }
+
   const cachedAnswer = findCachedAnswer({
     company: input.company,
     title: input.role,
