@@ -6,8 +6,10 @@ import test from "node:test";
 import {
   classifyQuestion,
   deterministicProfileAnswer,
+  enforceKeywordCoverage,
   enforceSalaryGuardrail,
   extractKeywords,
+  extractProfileSkillKeywords,
 } from "@/lib/ai";
 import { createId } from "@/lib/id";
 import { recommendResume } from "@/lib/resumes";
@@ -54,6 +56,25 @@ test("extracts useful JD keywords", () => {
     extractKeywords("We need Next.js, TypeScript, RAG and Redis.").slice(0, 4),
     ["need", "next.js", "typescript", "rag"],
   );
+});
+
+test("extracts profile skill keywords from JD text", () => {
+  assert.deepEqual(
+    extractProfileSkillKeywords(
+      "Need Next.js, TypeScript, Redis, and Docker.",
+    ).slice(0, 4),
+    ["Next.js", "TypeScript", "Docker", "Redis"],
+  );
+});
+
+test("repairs answers missing relevant JD keywords", () => {
+  const answer = enforceKeywordCoverage(
+    "I have built production systems for similar roles.",
+    "Need Next.js, TypeScript, Redis, and Docker.",
+  );
+
+  assert.match(answer, /Next\.js/);
+  assert.match(answer, /TypeScript/);
 });
 
 test("creates short prefixed ids", () => {

@@ -142,6 +142,29 @@ export function extractKeywords(text = "") {
   ).slice(0, 12);
 }
 
+export function extractProfileSkillKeywords(jdText = "") {
+  const text = jdText.toLowerCase();
+  const profile = getProfile();
+
+  return profile.skills
+    .filter((skill) => text.includes(skill.toLowerCase()))
+    .slice(0, 6);
+}
+
+export function enforceKeywordCoverage(answer: string, jdText = "") {
+  const required = extractProfileSkillKeywords(jdText);
+  const missing = required.filter(
+    (keyword) => !answer.toLowerCase().includes(keyword.toLowerCase()),
+  );
+
+  if (required.length === 0 || missing.length === 0) {
+    return answer;
+  }
+
+  const selected = missing.slice(0, 4).join(", ");
+  return `${answer} Relevant overlap includes ${selected}.`;
+}
+
 export function deterministicProfileAnswer(category: string) {
   const profile = getProfile();
 
@@ -285,7 +308,10 @@ export async function generateAnswer(
   });
 
   if (cachedAnswer) {
-    const guardedCachedAnswer = enforceSalaryGuardrail(cachedAnswer, category);
+    const guardedCachedAnswer = enforceKeywordCoverage(
+      enforceSalaryGuardrail(cachedAnswer, category),
+      input.jdText,
+    );
     if (guardedCachedAnswer !== cachedAnswer) {
       saveAnswerForJob({
         company: input.company,
@@ -334,7 +360,10 @@ export async function generateAnswer(
 
   answer ??= fallbackAnswer(input);
 
-  answer = enforceSalaryGuardrail(answer, category);
+  answer = enforceKeywordCoverage(
+    enforceSalaryGuardrail(answer, category),
+    input.jdText,
+  );
 
   const matchedKeywords = keywords.filter((keyword) =>
     answer.toLowerCase().includes(keyword.toLowerCase()),
