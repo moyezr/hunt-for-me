@@ -11,7 +11,7 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
 } from "@/lib/ai";
-import { csvEscape, toCsv } from "@/lib/csv";
+import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
 import { createId } from "@/lib/id";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
@@ -93,6 +93,12 @@ test("escapes CSV values", () => {
     ]),
     "name,note\nMoyez,ships fast\n",
   );
+});
+
+test("parses CSV objects with quoted values", () => {
+  assert.deepEqual(parseCsvObjects('name,notes\nAsha,"builds, ships"'), [
+    { name: "Asha", notes: "builds, ships" },
+  ]);
 });
 
 test("scores matching AI engineering jobs above scraper threshold", () => {

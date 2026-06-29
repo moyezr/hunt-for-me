@@ -1,3 +1,4 @@
+import { ContactImport } from "@/app/outreach/contact-import";
 import { OutreachBatch } from "@/app/outreach/outreach-batch";
 import { countSentMessagesToday, getContacts } from "@/lib/db";
 
@@ -42,6 +43,8 @@ export default function OutreachPage() {
           <p className="mt-1 text-2xl font-semibold">{due.length}</p>
         </div>
       </section>
+
+      <ContactImport />
 
       <OutreachBatch />
 
