@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from "@/lib/http";
-import { scrapeSeedJobs } from "@/lib/scraper";
+import { type ScrapePlatform, scrapeJobs } from "@/lib/scraper";
 
 export const runtime = "nodejs";
 
@@ -8,13 +8,16 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => ({}))) as {
       query?: string;
       location?: string;
+      platforms?: ScrapePlatform[];
+      maxPerPlatform?: number;
     };
 
-    const saved = await scrapeSeedJobs(body);
+    const result = await scrapeJobs(body);
 
     return jsonOk({
-      jobs: saved,
-      note: "Seed scraper is wired. Live Playwright scrapers for Naukri, Indeed, and Wellfound are the next implementation layer.",
+      jobs: result.saved,
+      skippedLowFit: result.skippedLowFit.length,
+      errors: result.errors,
     });
   } catch (error) {
     return jsonError(
