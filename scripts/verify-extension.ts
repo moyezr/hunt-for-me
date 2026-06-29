@@ -41,6 +41,21 @@ const fixtureHtml = `<!doctype html>
           Email address
           <input id="email" type="email" />
         </label>
+        <label for="portfolio">Portfolio URL</label>
+        <input id="portfolio" type="url" />
+        <label>
+          Years of TypeScript experience
+          <input id="years" type="number" />
+        </label>
+        <label>
+          Preferred work mode
+          <select id="work-mode">
+            <option value="">Select one</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="onsite">On-site</option>
+          </select>
+        </label>
         <label>
           Why do you want to join SignalWorks AI?
           <textarea id="why-company"></textarea>
@@ -52,7 +67,7 @@ const fixtureHtml = `<!doctype html>
       </form>
       <script>
         window.hfmEvents = [];
-        for (const element of document.querySelectorAll("textarea, input")) {
+        for (const element of document.querySelectorAll("textarea, input, select")) {
           element.addEventListener("input", () => window.hfmEvents.push(element.id + ":input"));
           element.addEventListener("change", () => window.hfmEvents.push(element.id + ":change"));
         }
@@ -89,7 +104,7 @@ try {
   const scan = await page.evaluate(async () => {
     return await new Promise<{
       context: { company: string; role: string; platform: string };
-      fields: { selector: string; label: string }[];
+      fields: { selector: string; label: string; options?: string[] }[];
     }>((resolve) => {
       window.__hfmContentListener({ type: "HFM_SCAN" }, {}, resolve);
     });
@@ -113,11 +128,29 @@ try {
   const nameField = scan.fields.find((field) =>
     field.label.includes("Full name"),
   );
+  const portfolioField = scan.fields.find((field) =>
+    field.label.includes("Portfolio URL"),
+  );
+  const yearsField = scan.fields.find((field) =>
+    field.label.includes("Years of TypeScript"),
+  );
+  const workModeField = scan.fields.find((field) =>
+    field.label.includes("Preferred work mode"),
+  );
   if (!whyField) {
     throw new Error("Expected application question field was not detected");
   }
   if (!nameField) {
     throw new Error("Expected full-name field was not detected");
+  }
+  if (!portfolioField) {
+    throw new Error("Expected explicit label URL field was not detected");
+  }
+  if (!yearsField) {
+    throw new Error("Expected number field was not detected");
+  }
+  if (!workModeField?.options?.includes("Remote")) {
+    throw new Error("Expected select options were not detected");
   }
 
   await page.evaluate(async (selector) => {
@@ -152,8 +185,22 @@ try {
     });
   }, nameField.selector);
 
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Remote" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, workModeField.selector);
+
   const filled = await page.locator("#why-company").inputValue();
   const fullName = await page.locator("#full-name").inputValue();
+  const workMode = await page.locator("#work-mode").inputValue();
   const events = await page.evaluate(() => window.hfmEvents);
 
   if (!filled.includes("SignalWorks AI")) {
@@ -161,6 +208,9 @@ try {
   }
   if (fullName !== "Moyez Rabbani") {
     throw new Error("Profile field was not filled into the input");
+  }
+  if (workMode !== "remote") {
+    throw new Error("Select field was not matched and filled by option text");
   }
 
   if (

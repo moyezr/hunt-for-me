@@ -38,6 +38,15 @@ function labelFor(element: HTMLElement) {
     }
   }
 
+  if (element.id) {
+    const explicitLabel = document
+      .querySelector(`label[for="${CSS.escape(element.id)}"]`)
+      ?.textContent?.trim();
+    if (explicitLabel) {
+      return explicitLabel;
+    }
+  }
+
   const label = element.closest("label")?.textContent?.trim();
   if (label) {
     return label;
@@ -48,19 +57,52 @@ function labelFor(element: HTMLElement) {
     return placeholder;
   }
 
-  const nearby = element.parentElement?.textContent?.trim();
+  const fieldsetLabel = element
+    .closest("fieldset")
+    ?.querySelector("legend")?.textContent;
+  if (fieldsetLabel?.trim()) {
+    return fieldsetLabel.trim();
+  }
+
+  const nearby =
+    element
+      .closest("[data-testid], .form-group, .field, .input, div")
+      ?.textContent?.trim() || element.parentElement?.textContent?.trim();
   return nearby || "Application question";
+}
+
+function selectOptions(element: HTMLElement) {
+  if (!(element instanceof HTMLSelectElement)) {
+    return undefined;
+  }
+
+  return Array.from(element.options)
+    .map((option) => option.textContent?.trim() || option.value.trim())
+    .filter(Boolean);
 }
 
 export function detectFields(): DetectedField[] {
   const elements = Array.from(
     document.querySelectorAll<HTMLElement>(
-      "textarea, input[type='text'], input[type='email'], input[type='tel'], input:not([type]), select",
+      [
+        "textarea",
+        "select",
+        "input:not([type])",
+        "input[type='text']",
+        "input[type='email']",
+        "input[type='tel']",
+        "input[type='url']",
+        "input[type='number']",
+        "input[type='search']",
+      ].join(", "),
     ),
   ).filter((element) => {
     const rect = element.getBoundingClientRect();
     return (
-      rect.width > 0 && rect.height > 0 && !element.hasAttribute("disabled")
+      rect.width > 0 &&
+      rect.height > 0 &&
+      !element.hasAttribute("disabled") &&
+      element.getAttribute("aria-hidden") !== "true"
     );
   });
 
@@ -73,6 +115,7 @@ export function detectFields(): DetectedField[] {
       selector: selectorFor(element, index),
       tagName: element.tagName.toLowerCase(),
       type: element.getAttribute("type") ?? element.tagName.toLowerCase(),
+      options: selectOptions(element),
     };
   });
 }
@@ -113,13 +156,32 @@ export function fillField(selector: string, value: string) {
     return false;
   }
 
-  const prototype = Object.getPrototypeOf(element);
-  const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+  if (element instanceof HTMLSelectElement) {
+    const normalizedValue = value.trim().toLowerCase();
+    const option = Array.from(element.options).find((item) => {
+      const text = item.textContent?.trim().toLowerCase() ?? "";
+      return (
+        item.value.toLowerCase() === normalizedValue ||
+        text === normalizedValue ||
+        text.includes(normalizedValue) ||
+        normalizedValue.includes(text)
+      );
+    });
 
-  if (descriptor?.set) {
-    descriptor.set.call(element, value);
+    if (option) {
+      element.value = option.value;
+    } else {
+      return false;
+    }
   } else {
-    element.value = value;
+    const prototype = Object.getPrototypeOf(element);
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+
+    if (descriptor?.set) {
+      descriptor.set.call(element, value);
+    } else {
+      element.value = value;
+    }
   }
 
   element.dispatchEvent(new Event("input", { bubbles: true }));

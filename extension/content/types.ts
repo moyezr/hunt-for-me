@@ -4,6 +4,7 @@ export type DetectedField = {
   selector: string;
   tagName: string;
   type: string;
+  options?: string[];
 };
 
 export type PageContext = {

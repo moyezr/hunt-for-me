@@ -135,11 +135,16 @@ async function getAnswer(field: DetectedField) {
     throw new Error("Missing page context");
   }
 
+  const question =
+    field.options && field.options.length > 0
+      ? `${field.label}\nOptions: ${field.options.join(", ")}`
+      : field.label;
+
   const response = await fetch(`${apiBase}/api/answer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      question: field.label,
+      question,
       company: context.company,
       role: context.role,
       jdText: context.jdText,
