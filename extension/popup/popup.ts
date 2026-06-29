@@ -9,6 +9,8 @@ const healthDot = document.querySelector<HTMLSpanElement>("#healthDot");
 const scanButton = document.querySelector<HTMLButtonElement>("#scanButton");
 const saveJobButton =
   document.querySelector<HTMLButtonElement>("#saveJobButton");
+const markAppliedButton =
+  document.querySelector<HTMLButtonElement>("#markAppliedButton");
 const applyButton = document.querySelector<HTMLButtonElement>("#applyButton");
 const answersElement = document.querySelector<HTMLElement>("#answers");
 const statusElement = document.querySelector<HTMLElement>("#status");
@@ -86,6 +88,11 @@ function updateContextUi() {
     saveJobButton.disabled =
       !context || context.company === "Unknown company" || !context.role;
   }
+
+  if (markAppliedButton) {
+    markAppliedButton.disabled =
+      !context || context.company === "Unknown company" || !context.role;
+  }
 }
 
 async function recommendResume() {
@@ -152,6 +159,36 @@ async function getAnswer(field: DetectedField) {
   };
 }
 
+async function saveCurrentJob(status: "discovered" | "applied") {
+  if (!context) {
+    throw new Error("Scan the page before saving the job");
+  }
+
+  const response = await fetch(`${apiBase}/api/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: context.role,
+      company: context.company,
+      url: context.url,
+      platform: context.platform,
+      jdText: context.jdText,
+      status,
+    }),
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error ?? "Could not save job");
+  }
+
+  return payload.data.job as {
+    id: string;
+    status: string;
+    appliedAt: string | null;
+  };
+}
+
 scanButton?.addEventListener("click", async () => {
   try {
     setStatus("Scanning page...");
@@ -180,31 +217,25 @@ scanButton?.addEventListener("click", async () => {
 
 saveJobButton?.addEventListener("click", async () => {
   try {
-    if (!context) {
-      throw new Error("Scan the page before saving the job");
-    }
-
-    const response = await fetch(`${apiBase}/api/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: context.role,
-        company: context.company,
-        url: context.url,
-        platform: context.platform,
-        jdText: context.jdText,
-        status: "discovered",
-      }),
-    });
-    const payload = await response.json();
-
-    if (!response.ok || !payload.ok) {
-      throw new Error(payload.error ?? "Could not save job");
-    }
-
+    await saveCurrentJob("discovered");
     setStatus("Job saved to dashboard.");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Could not save job");
+  }
+});
+
+markAppliedButton?.addEventListener("click", async () => {
+  try {
+    const job = await saveCurrentJob("applied");
+    setStatus(
+      job.appliedAt
+        ? "Marked applied in dashboard."
+        : "Marked applied. Check dashboard status.",
+    );
+  } catch (error) {
+    setStatus(
+      error instanceof Error ? error.message : "Could not mark applied",
+    );
   }
 });
 

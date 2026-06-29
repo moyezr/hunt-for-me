@@ -172,16 +172,28 @@ export function createJob(input: {
   }
 
   if (existing) {
+    if (input.status && input.status !== "discovered") {
+      return {
+        duplicate: false as const,
+        job: updateJob({
+          id: existing.id,
+          status: input.status,
+          notes: input.notes,
+        }),
+      };
+    }
+
     return { duplicate: false as const, job: existing };
   }
 
   const now = new Date().toISOString();
+  const appliedAt = input.status === "applied" ? now : null;
   const id = createId("job");
   getDb()
     .prepare(
       `INSERT INTO jobs (
         id, title, company, url, platform, jd_text, fit_score, status, answers, applied_at, notes, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', NULL, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', ?, ?, ?)`,
     )
     .run(
       id,
@@ -192,6 +204,7 @@ export function createJob(input: {
       input.jdText?.trim() ?? "",
       input.fitScore ?? null,
       input.status ?? "discovered",
+      appliedAt,
       input.notes?.trim() ?? "",
       now,
     );
