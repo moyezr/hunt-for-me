@@ -1,0 +1,219 @@
+const baseUrl = process.env.HFM_BASE_URL ?? "http://localhost:3000";
+
+export {};
+
+type ApiResponse<T> =
+  | {
+      ok: true;
+      data: T;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+async function readJson<T>(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Expected JSON from ${response.url}, got: ${text}`);
+  }
+}
+
+async function api<T>(
+  path: string,
+  init?: RequestInit,
+  expectedStatus?: number,
+) {
+  const response = await fetch(`${baseUrl}${path}`, init);
+  if (expectedStatus && response.status !== expectedStatus) {
+    throw new Error(
+      `${path} returned ${response.status}, expected ${expectedStatus}`,
+    );
+  }
+
+  const payload = await readJson<ApiResponse<T>>(response);
+  if (!payload.ok) {
+    throw new Error(`${path} failed: ${payload.error}`);
+  }
+
+  return payload.data;
+}
+
+async function apiFailure(
+  path: string,
+  init: RequestInit,
+  expectedStatus: number,
+) {
+  const response = await fetch(`${baseUrl}${path}`, init);
+  const payload = await readJson<ApiResponse<never>>(response);
+
+  if (response.status !== expectedStatus || payload.ok) {
+    throw new Error(
+      `${path} expected failure ${expectedStatus}, got ${response.status}`,
+    );
+  }
+
+  return payload.error;
+}
+
+async function text(path: string) {
+  const response = await fetch(`${baseUrl}${path}`);
+  if (!response.ok) {
+    throw new Error(`${path} returned ${response.status}`);
+  }
+
+  return response.text();
+}
+
+function postJson(body: unknown): RequestInit {
+  return {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
+function patchJson(body: unknown): RequestInit {
+  return {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
+const suffix = Date.now();
+
+await api<{ status: string }>("/api/health");
+
+await apiFailure(
+  "/api/answer",
+  postJson({
+    question: "Why do you want to join us?",
+    role: "Applied AI Engineer",
+  }),
+  400,
+);
+
+const salary = await api<{ answer: string }>(
+  "/api/answer",
+  postJson({
+    question: "Expected CTC",
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+);
+if (!salary.answer.includes("12–18 LPA")) {
+  throw new Error("Salary guardrail did not return 12–18 LPA");
+}
+
+const resume = await api<{
+  resume: { filename: string; exists: boolean };
+}>(
+  "/api/resumes/recommend",
+  postJson({
+    role: "Forward Deployed Engineer",
+    jdText: "Customer-facing AI engineering with TypeScript and Python.",
+  }),
+);
+if (resume.resume.filename !== "Forward_Deployed_Engineer.pdf") {
+  throw new Error(
+    `Unexpected resume recommendation: ${resume.resume.filename}`,
+  );
+}
+
+const createdJob = await api<{
+  job: { id: string; status: string; appliedAt: string | null };
+}>(
+  "/api/jobs",
+  postJson({
+    title: `Runtime Smoke Engineer ${suffix}`,
+    company: `Runtime Smoke Co ${suffix}`,
+    url: `https://example.com/jobs/${suffix}`,
+    platform: "runtime",
+    jdText: "Need Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
+  }),
+  201,
+);
+if (!createdJob.job.id.startsWith("job_")) {
+  throw new Error(`Unexpected job id: ${createdJob.job.id}`);
+}
+
+const appliedJob = await api<{
+  job: { id: string; status: string; appliedAt: string | null };
+}>(`/api/jobs/${createdJob.job.id}`, patchJson({ status: "applied" }));
+if (appliedJob.job.status !== "applied" || !appliedJob.job.appliedAt) {
+  throw new Error("Job was not marked applied");
+}
+
+await apiFailure(
+  "/api/jobs",
+  postJson({
+    title: `Runtime Smoke Engineer ${suffix}`,
+    company: `Runtime Smoke Co ${suffix}`,
+    url: `https://example.com/jobs/${suffix}`,
+    platform: "runtime",
+  }),
+  409,
+);
+
+const csv = [
+  "name,title,company,platform,profile_url,notes",
+  `Runtime Founder ${suffix},Founder,Runtime Outreach ${suffix},linkedin,https://linkedin.com/in/runtime-${suffix},building agentic hiring workflows`,
+].join("\n");
+const imported = await api<{
+  contacts: { id: string; status: string; messageHistory: unknown[] }[];
+}>("/api/contacts/import", postJson({ csv }));
+const contact = imported.contacts[0];
+if (!contact.id.startsWith("con_") || contact.status !== "new") {
+  throw new Error("Contact import did not create a new contact");
+}
+
+const drafted = await api<{
+  contact: { id: string; status: string; messageHistory: unknown[] };
+  message: { body: string };
+}>(
+  `/api/contacts/${contact.id}/message`,
+  postJson({ channel: "linkedin_note" }),
+);
+if (
+  drafted.contact.id !== contact.id ||
+  drafted.contact.status !== "drafted" ||
+  drafted.contact.messageHistory.length < 1
+) {
+  throw new Error("Existing contact draft was not appended");
+}
+if (/12\s*[–-]\s*18\s*LPA/i.test(drafted.message.body)) {
+  throw new Error("Outreach message mentioned salary");
+}
+
+const templates = await api<{
+  config: { channels: { linkedin_note: { maxChars: number } } };
+}>("/api/outreach/templates");
+if (templates.config.channels.linkedin_note.maxChars !== 280) {
+  throw new Error("LinkedIn note template max length is not configured");
+}
+
+const jobsCsv = await text("/api/export/jobs");
+if (!jobsCsv.includes(createdJob.job.id)) {
+  throw new Error("Jobs CSV did not include runtime job");
+}
+
+const contactsCsv = await text("/api/export/contacts");
+if (!contactsCsv.includes(contact.id)) {
+  throw new Error("Contacts CSV did not include runtime contact");
+}
+
+console.log(
+  JSON.stringify(
+    {
+      ok: true,
+      baseUrl,
+      jobId: createdJob.job.id,
+      contactId: contact.id,
+    },
+    null,
+    2,
+  ),
+);

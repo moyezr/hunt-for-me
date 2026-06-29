@@ -11,8 +11,10 @@
     "format": "biome check --write .",
     "test": "bun test",
     "test:node": "tsx --test tests/*.test.ts",
+    "verify": "npm run lint && npx tsc --noEmit && bun test && npm run verify:extension && npm run build",
     "build:extension": "tsx scripts/build-extension.ts",
-    "verify:extension": "npm run build:extension && tsx scripts/verify-extension.ts"
+    "verify:extension": "npm run build:extension && tsx scripts/verify-extension.ts",
+    "verify:runtime": "tsx scripts/verify-runtime.ts"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
