@@ -52,7 +52,11 @@ p {
 .actions {
   display: grid;
   gap: 8px;
-  grid-template-columns: 1fr 1.6fr;
+  grid-template-columns: 1fr 1fr;
+}
+
+#applyButton {
+  grid-column: 1 / -1;
 }
 
 button {

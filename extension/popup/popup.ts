@@ -7,6 +7,8 @@ import type {
 const apiBase = "http://localhost:3000";
 const healthDot = document.querySelector<HTMLSpanElement>("#healthDot");
 const scanButton = document.querySelector<HTMLButtonElement>("#scanButton");
+const saveJobButton =
+  document.querySelector<HTMLButtonElement>("#saveJobButton");
 const applyButton = document.querySelector<HTMLButtonElement>("#applyButton");
 const answersElement = document.querySelector<HTMLElement>("#answers");
 const statusElement = document.querySelector<HTMLElement>("#status");
@@ -72,6 +74,17 @@ function renderDrafts() {
   applyButton.disabled = drafts.length === 0;
 }
 
+function updateContextUi() {
+  if (pageContextElement && context) {
+    pageContextElement.textContent = `${context.company} - ${context.role}`;
+  }
+
+  if (saveJobButton) {
+    saveJobButton.disabled =
+      !context || context.company === "Unknown company" || !context.role;
+  }
+}
+
 async function getAnswer(field: DetectedField) {
   if (!context) {
     throw new Error("Missing page context");
@@ -111,9 +124,7 @@ scanButton?.addEventListener("click", async () => {
     context = scan.context;
     const fields = scan.fields as DetectedField[];
 
-    if (pageContextElement && context) {
-      pageContextElement.textContent = `${context.company} - ${context.role}`;
-    }
+    updateContextUi();
 
     setStatus(`Generating answers for ${fields.length} fields...`);
     drafts = [];
@@ -125,6 +136,36 @@ scanButton?.addEventListener("click", async () => {
     setStatus("Review and edit before applying. Nothing will be submitted.");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Scan failed");
+  }
+});
+
+saveJobButton?.addEventListener("click", async () => {
+  try {
+    if (!context) {
+      throw new Error("Scan the page before saving the job");
+    }
+
+    const response = await fetch(`${apiBase}/api/jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: context.role,
+        company: context.company,
+        url: context.url,
+        platform: context.platform,
+        jdText: context.jdText,
+        status: "discovered",
+      }),
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error ?? "Could not save job");
+    }
+
+    setStatus("Job saved to dashboard.");
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : "Could not save job");
   }
 });
 

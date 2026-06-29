@@ -259,6 +259,51 @@ export function countContactsToday(platform: string, status: ContactStatus) {
   return row.count;
 }
 
+export function getContact(id: string) {
+  const row = getDb().prepare("SELECT * FROM contacts WHERE id = ?").get(id) as
+    | ContactRow
+    | undefined;
+
+  if (!row) {
+    throw new Error(`Contact not found: ${id}`);
+  }
+
+  return toContact(row);
+}
+
+export function updateContact(input: {
+  id: string;
+  status?: ContactStatus;
+  messageBody?: string;
+}) {
+  const contact = getContact(input.id);
+  const history =
+    input.messageBody && contact.messageHistory.length > 0
+      ? contact.messageHistory.map((message, index) =>
+          index === contact.messageHistory.length - 1
+            ? { ...message, body: input.messageBody ?? message.body }
+            : message,
+        )
+      : contact.messageHistory;
+  const followUpDate =
+    input.status === "sent"
+      ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      : contact.followUpDate;
+
+  getDb()
+    .prepare(
+      "UPDATE contacts SET status = ?, message_history = ?, follow_up_date = ? WHERE id = ?",
+    )
+    .run(
+      input.status ?? contact.status,
+      JSON.stringify(history),
+      followUpDate,
+      input.id,
+    );
+
+  return getContact(input.id);
+}
+
 export function createContact(input: {
   name: string;
   title: string;

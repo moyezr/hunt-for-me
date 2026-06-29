@@ -1,3 +1,4 @@
+import { DashboardActions } from "@/app/dashboard/dashboard-actions";
 import { getJobs } from "@/lib/db";
 
 export default function DashboardPage() {
@@ -12,15 +13,9 @@ export default function DashboardPage() {
             Track discovered jobs, generated answers, and application status.
           </p>
         </div>
-        <form action="/api/scrape" method="post">
-          <button
-            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white"
-            type="submit"
-          >
-            Trigger scraper
-          </button>
-        </form>
       </div>
+
+      <DashboardActions />
 
       <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white">
         <table className="w-full border-collapse text-left text-sm">

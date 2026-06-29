@@ -3,7 +3,10 @@ import {
   fillField,
   readGenericContext,
 } from "@/extension/content/platforms/common";
+import { readIndeedContext } from "@/extension/content/platforms/indeed";
+import { readLinkedInContext } from "@/extension/content/platforms/linkedin";
 import { readNaukriContext } from "@/extension/content/platforms/naukri";
+import { readWellfoundContext } from "@/extension/content/platforms/wellfound";
 
 function getContext() {
   if (location.hostname.includes("naukri")) {
@@ -11,15 +14,15 @@ function getContext() {
   }
 
   if (location.hostname.includes("indeed")) {
-    return readGenericContext("indeed");
+    return readIndeedContext();
   }
 
   if (location.hostname.includes("wellfound")) {
-    return readGenericContext("wellfound");
+    return readWellfoundContext();
   }
 
   if (location.hostname.includes("linkedin")) {
-    return readGenericContext("linkedin");
+    return readLinkedInContext();
   }
 
   return readGenericContext("unknown");
