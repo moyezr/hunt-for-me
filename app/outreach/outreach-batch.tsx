@@ -56,6 +56,7 @@ export function OutreachBatch({
   const [channel, setChannel] =
     useState<OutreachMessage["channel"]>("linkedin_note");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [queueDrafts, setQueueDrafts] = useState<(Draft | null)[]>([]);
   const [queueText, setQueueText] = useState("");
   const [queue, setQueue] = useState<QueueContact[]>([]);
   const [queueIndex, setQueueIndex] = useState(0);
@@ -73,6 +74,7 @@ export function OutreachBatch({
     setQueueIndex(0);
     setSentCount(0);
     setDraft(null);
+    setQueueDrafts([]);
 
     const first = parsed[0];
     if (first) {
@@ -106,6 +108,7 @@ export function OutreachBatch({
     setQueueIndex(0);
     setSentCount(0);
     setDraft(null);
+    setQueueDrafts([]);
 
     const first = contacts[0];
     if (first) {
@@ -131,13 +134,29 @@ export function OutreachBatch({
     setQueueIndex(nextIndex);
     const nextContact = activeQueueContact(queue, nextIndex);
     loadContact(nextContact);
-    setDraft(null);
+    setDraft(queueDrafts[nextIndex] ?? null);
 
     if (nextContact) {
       setStatus(`Next: ${nextContact.name} at ${nextContact.company}`);
     } else if (queue.length > 0) {
       setStatus(`Batch complete. ${nextSentCount} marked sent.`);
     }
+  }
+
+  function rememberDraft(index: number, nextDraft: Draft) {
+    setQueueDrafts((current) => {
+      const next = [...current];
+      next[index] = nextDraft;
+      return next;
+    });
+  }
+
+  function rememberQueueContactId(index: number, contactId: string) {
+    setQueue((current) =>
+      current.map((contact, contactIndex) =>
+        contactIndex === index ? { ...contact, id: contactId } : contact,
+      ),
+    );
   }
 
   async function draftMessage() {
@@ -175,12 +194,87 @@ export function OutreachBatch({
       }
 
       setDraft(payload.data);
+      if (queue.length > 0 && queueIndex < queue.length) {
+        rememberDraft(queueIndex, payload.data);
+        rememberQueueContactId(queueIndex, payload.data.contact.id);
+      }
       setStatus("Draft ready. Edit, copy, or mark sent.");
       router.refresh();
     } catch (error) {
       setStatus(
         error instanceof Error ? error.message : "Message draft failed",
       );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function draftRemainingQueue() {
+    if (queue.length === 0 || queueIndex >= queue.length) {
+      setStatus("Load a queue before drafting.");
+      return;
+    }
+
+    setIsLoading(true);
+    const remaining = queue.slice(queueIndex).map((contact, index) =>
+      index === 0
+        ? {
+            ...contact,
+            name,
+            title,
+            company,
+            companyContext,
+          }
+        : contact,
+    );
+    setStatus(`Drafting ${remaining.length} queued message(s)...`);
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel,
+          contacts: remaining.map((contact) => ({
+            id: contact.id,
+            name: contact.name,
+            title: contact.title,
+            company: contact.company,
+            companyContext: contact.companyContext,
+            profileUrl: contact.profileUrl,
+            platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
+          })),
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error ?? "Queue draft failed");
+      }
+
+      const nextDrafts = [...queueDrafts];
+      const nextQueue = [...queue];
+      for (const item of payload.data.drafts as (Draft & { index: number })[]) {
+        const absoluteIndex = queueIndex + item.index;
+        nextDrafts[absoluteIndex] = {
+          contact: item.contact,
+          message: item.message,
+        };
+        nextQueue[absoluteIndex] = {
+          ...nextQueue[absoluteIndex],
+          id: item.contact.id,
+        };
+      }
+
+      setQueueDrafts(nextDrafts);
+      setQueue(nextQueue);
+      setDraft(nextDrafts[queueIndex] ?? null);
+      setStatus(
+        `${payload.data.drafts.length} draft(s) ready. Review each before marking sent.`,
+      );
+      router.refresh();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Queue draft failed");
     } finally {
       setIsLoading(false);
     }
@@ -315,6 +409,16 @@ export function OutreachBatch({
           type="button"
         >
           Draft message
+        </button>
+        <button
+          className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium disabled:text-[#a0a7b7]"
+          disabled={
+            isLoading || queue.length === 0 || queueIndex >= queue.length
+          }
+          onClick={draftRemainingQueue}
+          type="button"
+        >
+          Draft remaining queue
         </button>
         {status ? (
           <p className="text-sm text-[var(--muted)]">{status}</p>

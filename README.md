@@ -44,7 +44,7 @@ Runtime API verification, with the app already running on `localhost:3000`:
 npm run verify:runtime
 ```
 
-The runtime verifier checks health, single and batch answer guardrails, resume recommendation, job create/update/dedupe/export, contact import/draft/export, and outreach template loading.
+The runtime verifier checks health, single and batch answer guardrails, resume recommendation, job create/update/dedupe/export, contact import/draft/batch-draft/export, and outreach template loading.
 
 Extension-only verification:
 

@@ -209,6 +209,49 @@ if (/12\s*[–-]\s*18\s*LPA/i.test(drafted.message.body)) {
   throw new Error("Outreach message mentioned salary");
 }
 
+const batchDrafts = await api<{
+  drafts: {
+    index: number;
+    contact: { id: string; status: string; messageHistory: unknown[] };
+    message: { body: string };
+  }[];
+}>(
+  "/api/messages",
+  postJson({
+    channel: "linkedin_note",
+    contacts: [
+      {
+        id: contact.id,
+        companyContext: "expanding hiring automation",
+      },
+      {
+        name: `Runtime Recruiter ${suffix}`,
+        title: "Recruiter",
+        company: `Runtime Batch ${suffix}`,
+        companyContext: "hiring AI engineers",
+        platform: "linkedin",
+        profileUrl: `https://linkedin.com/in/runtime-batch-${suffix}`,
+      },
+    ],
+  }),
+);
+if (
+  batchDrafts.drafts.length !== 2 ||
+  batchDrafts.drafts[0].contact.id !== contact.id ||
+  !batchDrafts.drafts[1].contact.id.startsWith("con_")
+) {
+  throw new Error(
+    "Batch outreach drafts did not handle existing and new contacts",
+  );
+}
+if (
+  batchDrafts.drafts.some((item) =>
+    /12\s*[–-]\s*18\s*LPA/i.test(item.message.body),
+  )
+) {
+  throw new Error("Batch outreach draft mentioned salary");
+}
+
 const templates = await api<{
   config: { channels: { linkedin_note: { maxChars: number } } };
 }>("/api/outreach/templates");
