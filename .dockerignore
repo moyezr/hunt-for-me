@@ -1,0 +1,11 @@
+.env
+.git
+.next
+node_modules
+extension/dist
+data/jobhunt.db
+data/jobhunt.db-shm
+data/jobhunt.db-wal
+*.log
+.DS_Store
+*.tsbuildinfo

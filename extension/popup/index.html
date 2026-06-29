@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hunt For Me</title>
+    <link rel="stylesheet" href="../dist/popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Hunt For Me</h1>
+          <p id="pageContext">Scan a job application page.</p>
+        </div>
+        <span id="healthDot" title="Local API status"></span>
+      </header>
+      <div class="actions">
+        <button id="scanButton" type="button">Scan</button>
+        <button disabled id="applyButton" type="button">Apply approved answers</button>
+      </div>
+      <section id="answers"></section>
+      <p id="status"></p>
+    </main>
+    <script type="module" src="../dist/popup.js"></script>
+  </body>
+</html>

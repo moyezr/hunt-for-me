@@ -1,0 +1,103 @@
+body {
+  margin: 0;
+  width: 380px;
+  background: #f7f8fb;
+  color: #181b23;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+main {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+p {
+  color: #687084;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+
+#healthDot {
+  background: #a0a7b7;
+  border-radius: 999px;
+  display: block;
+  flex: 0 0 auto;
+  height: 12px;
+  margin-top: 4px;
+  width: 12px;
+}
+
+#healthDot.ok {
+  background: #0f766e;
+}
+
+#healthDot.error {
+  background: #be123c;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1.6fr;
+}
+
+button {
+  background: #0f766e;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 8px 10px;
+}
+
+button:disabled {
+  background: #a0a7b7;
+  cursor: not-allowed;
+}
+
+#answers {
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.answer {
+  background: white;
+  border: 1px solid #d9deea;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.answer label {
+  color: #181b23;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+textarea {
+  border: 1px solid #d9deea;
+  border-radius: 6px;
+  min-height: 86px;
+  padding: 8px;
+  resize: vertical;
+}

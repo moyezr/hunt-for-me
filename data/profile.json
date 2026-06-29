@@ -1,0 +1,120 @@
+{
+  "name": "Moyez Rabbani",
+  "contact": {
+    "email": "moyezrabbani.work@gmail.com",
+    "phone": "+91 7003427598",
+    "website": "https://moyezrabbani.dev",
+    "linkedin": "https://linkedin.com/in/moyez-rabbani-4a647421b",
+    "github": "https://github.com/moyezr"
+  },
+  "headline": "Software engineer specializing in AI voice agents, LLM applications, RAG systems, full-stack SaaS, and cloud microservices.",
+  "summary": "I build production AI and full-stack systems quickly, from customer discovery through deployment. Recent work includes voice AI agents, RAG chatbots, browser automation, SaaS products, Azure services, observability, and customer-facing internal tools.",
+  "skills": [
+    "Next.js",
+    "React",
+    "Node.js",
+    "TypeScript",
+    "Python",
+    "LiveKit",
+    "Telnyx",
+    "LLM applications",
+    "RAG",
+    "Azure AI Search",
+    "Azure Document Intelligence",
+    "Azure Functions",
+    "Event Grid",
+    "Docker",
+    "Redis",
+    "BullMQ",
+    "PostgreSQL",
+    "Prometheus",
+    "Grafana",
+    "Loki",
+    "Power Platform",
+    "Dataverse",
+    "Stripe",
+    "Razorpay"
+  ],
+  "experience": [
+    {
+      "company": "FluxxForward - IT Consulting via WeeTravel",
+      "title": "Lead Software Engineer / Founding Engineer",
+      "location": "Remote - Vancouver, Canada",
+      "start": "2024-08",
+      "end": "Present",
+      "highlights": [
+        "Designed and launched OneSpec, an AI phone answering service for home service businesses handling 200+ daily calls, lead qualification, and appointment booking.",
+        "Self-hosted LiveKit agent servers with Docker and virtual machines, integrating Telnyx telephony for low-latency voice responses under 300ms.",
+        "Built asynchronous microservices with BullMQ, Redis, scalable workers, serverless functions, and production observability.",
+        "Shipped Nemo Cares, a voice-first caregiving platform with automated phone medication reminders and 96% successful call delivery across 50+ active care recipients.",
+        "Built RAG-powered AI chatbots for municipal governments and enterprise clients using Azure AI Search, Azure Document Intelligence, embeddings, and LLM response generation.",
+        "Created a custom CRM and ticketing system that consolidated 3+ tools, saving roughly 20 hours per week and $4,800 annually.",
+        "Generated 500,000+ Reddit impressions within 16 hours while validating go-to-market for Nemo Cares."
+      ]
+    },
+    {
+      "company": "Tak Decor",
+      "title": "Software Engineer",
+      "location": "Remote - Gujarat, India",
+      "start": "2023-10",
+      "end": "2024-05",
+      "highlights": [
+        "Built a production e-commerce platform with cart, wishlist, coupons, OTP authentication, and Razorpay payments for 5,000+ monthly visitors.",
+        "Improved page-load performance by 75% with Next.js static generation and frontend optimization."
+      ]
+    }
+  ],
+  "projects": [
+    "OneSpec - AI phone answering and scheduling for home service businesses.",
+    "Nemo Cares - voice-first caregiving and medication reminder platform.",
+    "QuizWiz - full-stack quiz application."
+  ],
+  "preferredRoles": [
+    "AI Engineer",
+    "Applied AI Engineer",
+    "Forward Deployed Engineer",
+    "Full Stack Software Engineer",
+    "Founding Engineer",
+    "Software Engineer"
+  ],
+  "locationPreferences": [
+    "Remote",
+    "India",
+    "Bengaluru",
+    "Hyderabad",
+    "Pune",
+    "Mumbai",
+    "Delhi NCR"
+  ],
+  "salaryExpectation": "12-18 LPA",
+  "noticePeriod": "Available to discuss",
+  "narratives": {
+    "whyLooking": "I am looking for a role where I can build high-impact AI and product engineering systems with more ownership, faster shipping cycles, and closer contact with customers.",
+    "careerGoal": "My goal is to become a deeply reliable founding or senior engineer who can turn ambiguous business problems into shipped, measurable software.",
+    "whyLeftPreviousCompany": "I am optimizing for stronger product ownership, technical depth, and teams where fast execution and customer empathy are central to the work."
+  },
+  "outreachVoice": {
+    "traits": [
+      "high-agency",
+      "tech agnostic",
+      "does not need hand holding",
+      "has talked to 500+ customers",
+      "closed 26 clients",
+      "builds fast",
+      "ships fast",
+      "learns new technology on the fly"
+    ],
+    "rules": [
+      "Keep messages short and specific.",
+      "Think from a busy founder, recruiter, or HR person's perspective.",
+      "Create curiosity without sounding generic.",
+      "Never mention salary in outreach."
+    ]
+  },
+  "resumes": {
+    "softwareEngineer": "Software_Engineer.pdf",
+    "fullStackSoftwareEngineer": "Full Stack Software Engineer.pdf",
+    "aiEngineer": "AI_Engineer.pdf",
+    "forwardDeployedEngineer": "Forward_Deployed_Engineer.pdf"
+  }
+}

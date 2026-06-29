@@ -1,0 +1,38 @@
+{
+  "name": "hunt-for-me",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run build:extension && next build",
+    "start": "next start",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "bun test",
+    "test:node": "tsx --test tests/*.test.ts",
+    "build:extension": "tsx scripts/build-extension.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "better-sqlite3": "^12.5.0",
+    "esbuild": "^0.27.2",
+    "next": "^16.2.9",
+    "playwright": "^1.57.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zod": "^4.2.1",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/chrome": "^0.1.14",
+    "@types/node": "^24.10.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
