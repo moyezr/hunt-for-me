@@ -57,7 +57,7 @@ npm run verify:extension
 - `data/profile.json` is the candidate source of truth.
 - `data/outreach-templates.json` controls channel-specific outreach style.
 - `data/jobhunt.db` stores jobs and contacts locally.
-- Resume PDFs are referenced from `data/profile.json`.
+- Resume PDFs are tracked at the repository root and referenced from `data/profile.json`.
 
 ## Docker
 

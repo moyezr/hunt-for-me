@@ -143,6 +143,9 @@ if (resume.resume.filename !== "Forward_Deployed_Engineer.pdf") {
     `Unexpected resume recommendation: ${resume.resume.filename}`,
   );
 }
+if (!resume.resume.exists) {
+  throw new Error(`Recommended resume is missing: ${resume.resume.filename}`);
+}
 
 const createdJob = await api<{
   job: { id: string; status: string; appliedAt: string | null };
