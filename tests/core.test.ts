@@ -11,6 +11,7 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
 } from "@/lib/ai";
+import { contactIdentityKey } from "@/lib/contact-identity";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
 import { createId } from "@/lib/id";
 import {
@@ -176,6 +177,21 @@ test("summarizes daily application progress", () => {
   assert.equal(summary.readyToApply, 1);
   assert.equal(summary.highFit, 1);
   assert.equal(summary.targetRemaining, 19);
+});
+
+test("normalizes contact identity matching inputs", () => {
+  const first = {
+    name: "Asha Rao",
+    title: "Founder",
+    company: "SignalWorks",
+  };
+  const second = {
+    name: " asha rao ",
+    title: " founder ",
+    company: " signalworks ",
+  };
+
+  assert.equal(contactIdentityKey(first), contactIdentityKey(second));
 });
 
 test("test db isolation directory exists when needed", () => {

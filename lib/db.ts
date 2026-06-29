@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { contactIdentityKey } from "@/lib/contact-identity";
 import { createId } from "@/lib/id";
 import type {
   Contact,
@@ -380,6 +381,34 @@ export function addMessageToContact(input: {
   return getContact(input.id);
 }
 
+export function findContactByIdentity(input: {
+  name: string;
+  title: string;
+  company: string;
+  profileUrl?: string;
+}) {
+  const profileUrl = input.profileUrl?.trim();
+  const row = profileUrl
+    ? (getDb()
+        .prepare("SELECT * FROM contacts WHERE profile_url = ?")
+        .get(profileUrl) as ContactRow | undefined)
+    : undefined;
+
+  if (row) {
+    return toContact(row);
+  }
+
+  const targetKey = contactIdentityKey(input);
+  const identityRow = getDb()
+    .prepare("SELECT * FROM contacts")
+    .all()
+    .find(
+      (contact) => contactIdentityKey(contact as ContactRow) === targetKey,
+    ) as ContactRow | undefined;
+
+  return identityRow ? toContact(identityRow) : null;
+}
+
 export function createContact(input: {
   name: string;
   title: string;
@@ -391,6 +420,37 @@ export function createContact(input: {
   followUpDate?: string | null;
   notes?: string;
 }) {
+  const existing = findContactByIdentity(input);
+  if (existing) {
+    const withMessage = input.message
+      ? addMessageToContact({
+          id: existing.id,
+          message: input.message,
+          status: input.status ?? "drafted",
+        })
+      : existing;
+
+    if (input.status === "sent") {
+      return updateContact({
+        id: withMessage.id,
+        status: "sent",
+      });
+    }
+
+    if (
+      input.status &&
+      input.status !== "new" &&
+      input.status !== withMessage.status
+    ) {
+      return updateContact({
+        id: withMessage.id,
+        status: input.status,
+      });
+    }
+
+    return withMessage;
+  }
+
   const id = createId("con");
   const now = new Date().toISOString();
   const history = input.message ? [input.message] : [];

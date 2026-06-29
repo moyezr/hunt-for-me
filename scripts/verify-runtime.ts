@@ -194,6 +194,15 @@ if (!contact.id.startsWith("con_") || contact.status !== "new") {
   throw new Error("Contact import did not create a new contact");
 }
 
+const duplicateImport = await api<{
+  contacts: { id: string; status: string; messageHistory: unknown[] }[];
+}>("/api/contacts/import", postJson({ csv }));
+if (duplicateImport.contacts[0].id !== contact.id) {
+  throw new Error(
+    "Duplicate contact import did not reuse the existing contact",
+  );
+}
+
 const drafted = await api<{
   contact: { id: string; status: string; messageHistory: unknown[] };
   message: { body: string };
@@ -210,6 +219,26 @@ if (
 }
 if (/12\s*[–-]\s*18\s*LPA/i.test(drafted.message.body)) {
   throw new Error("Outreach message mentioned salary");
+}
+
+const duplicateDraft = await api<{
+  contact: { id: string; status: string; messageHistory: unknown[] };
+}>(
+  "/api/message",
+  postJson({
+    name: `Runtime Founder ${suffix}`,
+    title: "Founder",
+    company: `Runtime Outreach ${suffix}`,
+    platform: "linkedin",
+    profileUrl: `https://linkedin.com/in/runtime-${suffix}`,
+    channel: "linkedin_note",
+    companyContext: "building agentic hiring workflows",
+  }),
+);
+if (duplicateDraft.contact.id !== contact.id) {
+  throw new Error(
+    "Duplicate outreach draft did not reuse the existing contact",
+  );
 }
 
 const batchDrafts = await api<{
