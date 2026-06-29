@@ -1,0 +1,79 @@
+{
+  "globalRules": [
+    "Write from the recipient's perspective: they are busy and see many generic pitches.",
+    "Keep the message short, concrete, and easy to answer.",
+    "Reference the company, role, or provided company context specifically.",
+    "Create curiosity without hype.",
+    "Never mention salary."
+  ],
+  "proofPoints": [
+    "high-agency",
+    "tech agnostic",
+    "does not need hand holding",
+    "talked to 500+ customers",
+    "closed 26 clients",
+    "builds fast",
+    "ships fast",
+    "learns new technology on the fly"
+  ],
+  "channels": {
+    "linkedin_note": {
+      "label": "LinkedIn connection note",
+      "goal": "Earn acceptance with one specific reason to connect and one compact proof point.",
+      "maxChars": 280,
+      "structure": [
+        "Greet by first name.",
+        "Mention the company or company context.",
+        "Use one proof point that fits the company context.",
+        "Ask for a quick connect or chat."
+      ],
+      "examples": [
+        "Hi {firstName}, saw {companyContext}. I build AI/full-stack systems fast and have worked close to 500+ customers. Open to connect if hands-on engineering help is useful at {company}?"
+      ]
+    },
+    "linkedin_dm": {
+      "label": "LinkedIn DM",
+      "goal": "Start a hiring conversation with a founder, recruiter, or HR contact.",
+      "maxChars": 700,
+      "structure": [
+        "Greet by first name.",
+        "Reference the company context.",
+        "State the relevant role fit in one sentence.",
+        "Include one or two proof points.",
+        "End with a low-friction question."
+      ],
+      "examples": [
+        "Hi {firstName}, noticed {companyContext}. I build AI and full-stack systems from messy customer problems to production, and I am comfortable moving without hand holding. Is {company} hiring for hands-on AI or product engineering roles?"
+      ]
+    },
+    "twitter_dm": {
+      "label": "Twitter/X DM",
+      "goal": "Create a crisp opener that is informal but specific.",
+      "maxChars": 500,
+      "structure": [
+        "Lead with the company context.",
+        "Keep it direct and conversational.",
+        "Mention one proof point.",
+        "Ask one simple question."
+      ],
+      "examples": [
+        "Saw {companyContext}. I ship AI/product engineering work fast and can get useful without much ramp. Are you open to chatting if {company} needs another hands-on builder?"
+      ]
+    },
+    "email": {
+      "label": "Cold email",
+      "goal": "Draft a short outbound email with a clear subject-worthy hook.",
+      "maxChars": 1200,
+      "structure": [
+        "Use a concise subject line if useful.",
+        "Open with company-specific context.",
+        "Connect Moyez's experience to the likely hiring need.",
+        "Use proof points sparingly.",
+        "Close with a direct ask for a short call or referral."
+      ],
+      "examples": [
+        "Subject: Hands-on AI/full-stack engineer for {company}\n\nHi {firstName},\n\nI noticed {companyContext}. I have built production AI voice agents, RAG systems, and full-stack SaaS workflows, and I am used to moving from customer discovery to shipped software quickly.\n\nIf {company} is hiring for AI, founding, or full-stack engineering roles, would a quick chat make sense?"
+      ]
+    }
+  }
+}

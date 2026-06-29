@@ -13,6 +13,11 @@ import {
 } from "@/lib/ai";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
 import { createId } from "@/lib/id";
+import {
+  buildOutreachPrompt,
+  getOutreachTemplate,
+  validateOutreachTemplates,
+} from "@/lib/outreach-templates";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
 
@@ -114,6 +119,22 @@ test("profile is present and not empty", () => {
     name?: string;
   };
   assert.equal(profile.name, "Moyez Rabbani");
+});
+
+test("outreach templates are configurable by channel", () => {
+  const noteTemplate = getOutreachTemplate("linkedin_note");
+  const dmPrompt = buildOutreachPrompt("linkedin_dm");
+
+  assert.equal(noteTemplate.maxChars, 280);
+  assert.match(dmPrompt, /talked to 500\+ customers/);
+  assert.match(dmPrompt, /LinkedIn DM/);
+});
+
+test("outreach template validation requires every channel", () => {
+  assert.equal(
+    validateOutreachTemplates({ globalRules: [], channels: {} }),
+    false,
+  );
 });
 
 test("test db isolation directory exists when needed", () => {

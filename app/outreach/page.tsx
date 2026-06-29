@@ -1,9 +1,12 @@
 import { ContactImport } from "@/app/outreach/contact-import";
 import { OutreachBatch } from "@/app/outreach/outreach-batch";
+import { OutreachTemplateEditor } from "@/app/outreach/outreach-template-editor";
 import { countSentMessagesToday, getContacts } from "@/lib/db";
+import { getOutreachTemplates } from "@/lib/outreach-templates";
 
 export default function OutreachPage() {
   const contacts = getContacts();
+  const templates = getOutreachTemplates();
   const due = contacts.filter(
     (contact) =>
       contact.followUpDate && new Date(contact.followUpDate) <= new Date(),
@@ -47,6 +50,8 @@ export default function OutreachPage() {
       <ContactImport />
 
       <OutreachBatch savedContacts={contacts} />
+
+      <OutreachTemplateEditor initialConfig={templates} />
 
       <div className="rounded-lg border border-[var(--line)] bg-white">
         <div className="border-b border-[var(--line)] px-4 py-3">

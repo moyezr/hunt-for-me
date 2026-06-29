@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { findCachedAnswer, saveAnswerForJob } from "@/lib/db";
+import {
+  buildOutreachPrompt,
+  getOutreachTemplate,
+} from "@/lib/outreach-templates";
 import { getProfile } from "@/lib/profile";
 import type { AnswerRequest, AnswerResult, OutreachMessage } from "@/lib/types";
 
@@ -394,7 +398,8 @@ export async function generateOutreach(input: {
   companyContext?: string;
 }) {
   const profile = getProfile();
-  const prompt = readPrompt("outreach-message.md");
+  const prompt = buildOutreachPrompt(input.channel);
+  const template = getOutreachTemplate(input.channel);
   const userPrompt = JSON.stringify({ ...input, candidate: profile }, null, 2);
 
   let body: string | null = null;
@@ -407,10 +412,14 @@ export async function generateOutreach(input: {
     console.warn(error instanceof Error ? error.message : error);
   }
 
-  body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, from customer discovery to production. Open to a quick chat if ${input.title} or founder-led engineering roles are relevant.`;
+  const proofPoint =
+    profile.outreachVoice.traits.find((trait) => trait.includes("500+")) ??
+    profile.outreachVoice.traits[0] ??
+    "high-agency";
+  body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, ${proofPoint}, and can get useful without much ramp. Open to a quick chat if ${input.title} or hands-on engineering roles are relevant?`;
 
-  if (input.channel === "linkedin_note" && body.length > 280) {
-    body = `${body.slice(0, 277).trimEnd()}...`;
+  if (template.maxChars && body.length > template.maxChars) {
+    body = `${body.slice(0, template.maxChars - 3).trimEnd()}...`;
   }
 
   return body.replace(/12\s*[–-]\s*18\s*LPA/gi, "").trim();

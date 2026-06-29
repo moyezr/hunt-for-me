@@ -60,6 +60,20 @@ export type OutreachMessage = {
   createdAt: string;
 };
 
+export type OutreachTemplate = {
+  label: string;
+  goal: string;
+  maxChars: number | null;
+  structure: string[];
+  examples: string[];
+};
+
+export type OutreachTemplateConfig = {
+  globalRules: string[];
+  proofPoints: string[];
+  channels: Record<OutreachMessage["channel"], OutreachTemplate>;
+};
+
 export type CandidateProfile = {
   name: string;
   contact: {
