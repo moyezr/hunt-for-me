@@ -15,6 +15,30 @@ const popupScriptPath = path.join(
   "popup.js",
 );
 
+const popupHtml = `<!doctype html>
+<html>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Hunt For Me</h1>
+          <p id="pageContext">Scan a job application page.</p>
+        </div>
+        <span id="healthDot" title="Local API status"></span>
+      </header>
+      <div class="actions">
+        <button id="scanButton" type="button">Scan</button>
+        <button disabled id="saveJobButton" type="button">Save job</button>
+        <button disabled id="markAppliedButton" type="button">Mark applied</button>
+        <button disabled id="applyButton" type="button">Apply approved answers</button>
+      </div>
+      <section hidden id="resumeRecommendation" class="resume"></section>
+      <section id="answers"></section>
+      <p id="status"></p>
+    </main>
+  </body>
+</html>`;
+
 for (const file of [contentScriptPath, popupScriptPath]) {
   if (!fs.existsSync(file)) {
     throw new Error(`Missing built extension file: ${file}`);
@@ -220,7 +244,192 @@ try {
     throw new Error("React-compatible input/change events were not dispatched");
   }
 
-  console.log("Extension content fill verification passed.");
+  const popupPage = await browser.newPage();
+  const popupApiRequests: string[] = [];
+  let popupFillAnswers: { selector: string; answer: string }[] = [];
+  await popupPage.exposeFunction("hfmMockSendMessage", (message: unknown) => {
+    const typedMessage = message as {
+      type: string;
+      answers?: { selector: string; answer: string }[];
+    };
+
+    if (typedMessage.type === "HFM_SCAN") {
+      return {
+        context: {
+          company: "SignalWorks AI",
+          role: "Applied AI Engineer",
+          url: "https://www.naukri.com/job-listings-applied-ai",
+          platform: "naukri",
+          jdText: "Need Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
+        },
+        fields: [
+          {
+            id: "field_name",
+            label: "Full name",
+            selector: "#full-name",
+            tagName: "input",
+            type: "text",
+          },
+          {
+            id: "field_mode",
+            label: "Preferred work mode",
+            selector: "#work-mode",
+            tagName: "select",
+            type: "select",
+            options: ["Select one", "Remote", "Hybrid"],
+          },
+          {
+            id: "field_why",
+            label: "Why do you want to join SignalWorks AI?",
+            selector: "#why-company",
+            tagName: "textarea",
+            type: "textarea",
+          },
+        ],
+      };
+    }
+
+    if (typedMessage.type === "HFM_FILL") {
+      popupFillAnswers = typedMessage.answers ?? [];
+      return { results: typedMessage.answers?.map(() => ({ filled: true })) };
+    }
+
+    return {};
+  });
+  await popupPage.route("http://localhost:3000/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    popupApiRequests.push(url.pathname);
+
+    if (url.pathname === "/api/health") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          data: { status: "healthy", service: "hunt-for-me" },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/resumes/recommend") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          data: {
+            resume: {
+              label: "AI Engineer",
+              filename: "AI_Engineer.pdf",
+              reason: "Best fit",
+              exists: true,
+              relativePath: "AI_Engineer.pdf",
+            },
+          },
+        }),
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/answers") {
+      const requestBody = route.request().postDataJSON() as {
+        questions: { id: string; question: string }[];
+      };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          data: {
+            answers: requestBody.questions.map((question) => ({
+              id: question.id,
+              question: question.question,
+              category: question.id === "field_name" ? "full_name" : "general",
+              answer:
+                question.id === "field_name"
+                  ? "Moyez Rabbani"
+                  : question.id === "field_mode"
+                    ? "Remote"
+                    : "SignalWorks AI is a strong fit for my production AI and full-stack work.",
+              matchedKeywords: [],
+              cached: false,
+            })),
+          },
+        }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: false, error: "Unexpected popup API call" }),
+    });
+  });
+  await popupPage.setContent(popupHtml);
+  await popupPage.evaluate(() => {
+    (window as unknown as { chrome: unknown }).chrome = {
+      tabs: {
+        async query() {
+          return [{ id: 1 }];
+        },
+        async sendMessage(_tabId: number, message: unknown) {
+          return await (
+            window as unknown as {
+              hfmMockSendMessage(input: unknown): Promise<unknown>;
+            }
+          ).hfmMockSendMessage(message);
+        },
+      },
+    };
+  });
+  await popupPage.addScriptTag({ path: popupScriptPath });
+  await popupPage.locator("#scanButton").click();
+  await popupPage.locator("textarea").first().waitFor();
+  if (!(await popupPage.locator("#applyButton").isDisabled())) {
+    throw new Error(
+      "Apply button was enabled while popup answers were loading",
+    );
+  }
+  await popupPage
+    .locator("#status")
+    .getByText("Review and edit before applying")
+    .waitFor();
+
+  if (!popupApiRequests.includes("/api/answers")) {
+    throw new Error("Popup did not call the batch answers endpoint");
+  }
+  if (popupApiRequests.includes("/api/answer")) {
+    throw new Error("Popup called single-answer endpoint during batch scan");
+  }
+
+  const popupAnswers = await popupPage
+    .locator("#answers textarea")
+    .evaluateAll((textareas) =>
+      textareas.map((textarea) => (textarea as HTMLTextAreaElement).value),
+    );
+  if (
+    popupAnswers.length !== 3 ||
+    !popupAnswers.includes("Moyez Rabbani") ||
+    !popupAnswers.includes("Remote")
+  ) {
+    throw new Error("Popup did not render batch-generated draft answers");
+  }
+
+  if (await popupPage.locator("#applyButton").isDisabled()) {
+    throw new Error("Apply button was not enabled after answers loaded");
+  }
+
+  await popupPage.locator("#applyButton").click();
+  if (
+    popupFillAnswers.length !== 3 ||
+    !popupFillAnswers.some((answer) => answer.answer === "Moyez Rabbani")
+  ) {
+    throw new Error(
+      "Popup did not send approved answers to the content script",
+    );
+  }
+
+  console.log("Extension content and popup verification passed.");
 } finally {
   await browser.close();
 }
