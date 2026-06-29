@@ -11,6 +11,7 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
 } from "@/lib/ai";
+import { csvEscape, toCsv } from "@/lib/csv";
 import { createId } from "@/lib/id";
 import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
@@ -81,6 +82,17 @@ test("creates short prefixed ids", () => {
   const id = createId("job");
   assert.match(id, /^job_[A-Za-z0-9_-]+$/);
   assert.ok(id.length < 20);
+});
+
+test("escapes CSV values", () => {
+  assert.equal(csvEscape('A "quoted", value'), '"A ""quoted"", value"');
+  assert.equal(
+    toCsv([
+      ["name", "note"],
+      ["Moyez", "ships fast"],
+    ]),
+    "name,note\nMoyez,ships fast\n",
+  );
 });
 
 test("scores matching AI engineering jobs above scraper threshold", () => {

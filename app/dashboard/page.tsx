@@ -15,6 +15,12 @@ export default function DashboardPage() {
             Track discovered jobs, generated answers, and application status.
           </p>
         </div>
+        <a
+          className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium"
+          href="/api/export/jobs"
+        >
+          Export CSV
+        </a>
       </div>
 
       <DashboardActions />

@@ -12,12 +12,20 @@ export default function OutreachPage() {
 
   return (
     <main className="mx-auto grid max-w-7xl gap-6 px-5 py-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Outreach batch</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Draft short founder, recruiter, and HR messages. Salary is
-          intentionally excluded.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold">Outreach batch</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Draft short founder, recruiter, and HR messages. Salary is
+            intentionally excluded.
+          </p>
+        </div>
+        <a
+          className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium"
+          href="/api/export/contacts"
+        >
+          Export CSV
+        </a>
       </div>
 
       <section className="grid gap-3 md:grid-cols-3">
