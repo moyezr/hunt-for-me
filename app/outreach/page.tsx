@@ -49,7 +49,41 @@ export default function OutreachPage() {
 
       <ContactImport />
 
-      <OutreachBatch savedContacts={contacts} />
+      <OutreachBatch dueContacts={due} savedContacts={contacts} />
+
+      <section className="rounded-lg border border-[var(--line)] bg-white">
+        <div className="border-b border-[var(--line)] px-4 py-3">
+          <h2 className="font-semibold">Follow-ups due</h2>
+          <p className="text-sm text-[var(--muted)]">
+            Contacts with follow-up dates due today or earlier.
+          </p>
+        </div>
+        <div className="divide-y divide-[var(--line)]">
+          {due.map((contact) => (
+            <article className="grid gap-2 p-4" key={contact.id}>
+              <div className="flex flex-wrap justify-between gap-2">
+                <p className="font-medium">
+                  {contact.name} · {contact.company}
+                </p>
+                <span className="text-sm text-[var(--muted)]">
+                  {contact.followUpDate
+                    ? new Date(contact.followUpDate).toLocaleDateString()
+                    : "No date"}
+                </span>
+              </div>
+              <p className="text-sm text-[var(--muted)]">
+                {contact.title} · {contact.status}
+              </p>
+              <p className="text-sm">{contact.messageHistory.at(-1)?.body}</p>
+            </article>
+          ))}
+          {due.length === 0 ? (
+            <p className="p-6 text-center text-sm text-[var(--muted)]">
+              No follow-ups due.
+            </p>
+          ) : null}
+        </div>
+      </section>
 
       <OutreachTemplateEditor initialConfig={templates} />
 

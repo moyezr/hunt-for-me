@@ -43,10 +43,32 @@ function parseQueue(raw: string) {
     .filter((contact) => contact.name && contact.title && contact.company);
 }
 
+function contactToQueueContact(
+  contact: Contact,
+  mode: "initial" | "follow-up",
+) {
+  const latestMessage = contact.messageHistory.at(-1)?.body;
+  const followUpContext =
+    mode === "follow-up" && latestMessage
+      ? `Follow up on previous outreach: "${latestMessage}". ${contact.notes}`
+      : contact.notes;
+
+  return {
+    id: contact.id,
+    name: contact.name,
+    title: contact.title,
+    company: contact.company,
+    companyContext: followUpContext.trim(),
+    profileUrl: contact.profileUrl,
+  };
+}
+
 export function OutreachBatch({
   savedContacts = [],
+  dueContacts = [],
 }: {
   savedContacts?: Contact[];
+  dueContacts?: Contact[];
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -95,14 +117,7 @@ export function OutreachBatch({
       .filter(
         (contact) => contact.status !== "sent" && contact.status !== "closed",
       )
-      .map((contact) => ({
-        id: contact.id,
-        name: contact.name,
-        title: contact.title,
-        company: contact.company,
-        companyContext: contact.notes,
-        profileUrl: contact.profileUrl,
-      }));
+      .map((contact) => contactToQueueContact(contact, "initial"));
 
     setQueue(contacts);
     setQueueIndex(0);
@@ -119,6 +134,32 @@ export function OutreachBatch({
       setStatus(`${contacts.length} saved contact(s) queued.`);
     } else {
       setStatus("No saved contacts ready for drafting.");
+    }
+  }
+
+  function loadDueFollowUps() {
+    const contacts = dueContacts
+      .filter(
+        (contact) =>
+          contact.status !== "responded" && contact.status !== "closed",
+      )
+      .map((contact) => contactToQueueContact(contact, "follow-up"));
+
+    setQueue(contacts);
+    setQueueIndex(0);
+    setSentCount(0);
+    setDraft(null);
+    setQueueDrafts([]);
+
+    const first = contacts[0];
+    if (first) {
+      setName(first.name);
+      setTitle(first.title);
+      setCompany(first.company);
+      setCompanyContext(first.companyContext);
+      setStatus(`${contacts.length} follow-up contact(s) queued.`);
+    } else {
+      setStatus("No follow-ups due.");
     }
   }
 
@@ -348,6 +389,13 @@ export function OutreachBatch({
             type="button"
           >
             Load saved contacts
+          </button>
+          <button
+            className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium"
+            onClick={loadDueFollowUps}
+            type="button"
+          >
+            Load follow-ups due
           </button>
           <span className="text-sm text-[var(--muted)]">
             {queue.length > 0
