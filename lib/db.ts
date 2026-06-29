@@ -365,6 +365,21 @@ export function updateContact(input: {
   return getContact(input.id);
 }
 
+export function addMessageToContact(input: {
+  id: string;
+  message: OutreachMessage;
+  status?: ContactStatus;
+}) {
+  const contact = getContact(input.id);
+  const history = [...contact.messageHistory, input.message];
+
+  getDb()
+    .prepare("UPDATE contacts SET status = ?, message_history = ? WHERE id = ?")
+    .run(input.status ?? "drafted", JSON.stringify(history), input.id);
+
+  return getContact(input.id);
+}
+
 export function createContact(input: {
   name: string;
   title: string;

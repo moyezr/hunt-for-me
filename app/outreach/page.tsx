@@ -46,7 +46,7 @@ export default function OutreachPage() {
 
       <ContactImport />
 
-      <OutreachBatch />
+      <OutreachBatch savedContacts={contacts} />
 
       <div className="rounded-lg border border-[var(--line)] bg-white">
         <div className="border-b border-[var(--line)] px-4 py-3">

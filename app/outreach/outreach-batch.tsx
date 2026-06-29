@@ -10,6 +10,7 @@ type Draft = {
 };
 
 type QueueContact = {
+  id?: string;
   name: string;
   title: string;
   company: string;
@@ -42,7 +43,11 @@ function parseQueue(raw: string) {
     .filter((contact) => contact.name && contact.title && contact.company);
 }
 
-export function OutreachBatch() {
+export function OutreachBatch({
+  savedContacts = [],
+}: {
+  savedContacts?: Contact[];
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
@@ -83,6 +88,37 @@ export function OutreachBatch() {
     }
   }
 
+  function loadSavedContacts() {
+    const contacts = savedContacts
+      .filter(
+        (contact) => contact.status !== "sent" && contact.status !== "closed",
+      )
+      .map((contact) => ({
+        id: contact.id,
+        name: contact.name,
+        title: contact.title,
+        company: contact.company,
+        companyContext: contact.notes,
+        profileUrl: contact.profileUrl,
+      }));
+
+    setQueue(contacts);
+    setQueueIndex(0);
+    setSentCount(0);
+    setDraft(null);
+
+    const first = contacts[0];
+    if (first) {
+      setName(first.name);
+      setTitle(first.title);
+      setCompany(first.company);
+      setCompanyContext(first.companyContext);
+      setStatus(`${contacts.length} saved contact(s) queued.`);
+    } else {
+      setStatus("No saved contacts ready for drafting.");
+    }
+  }
+
   function loadContact(contact: QueueContact | null) {
     setName(contact?.name ?? "");
     setTitle(contact?.title ?? "");
@@ -110,18 +146,27 @@ export function OutreachBatch() {
     const queuedContact = activeQueueContact();
 
     try {
-      const response = await fetch("/api/message", {
+      const endpoint = queuedContact?.id
+        ? `/api/contacts/${queuedContact.id}/message`
+        : "/api/message";
+      const requestBody = queuedContact?.id
+        ? {
+            channel,
+            companyContext: companyContext || queuedContact.companyContext,
+          }
+        : {
+            name,
+            title,
+            company,
+            companyContext,
+            channel,
+            platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
+            profileUrl: queuedContact?.profileUrl ?? "",
+          };
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          title,
-          company,
-          companyContext,
-          channel,
-          platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
-          profileUrl: queuedContact?.profileUrl ?? "",
-        }),
+        body: JSON.stringify(requestBody),
       });
       const payload = await response.json();
 
@@ -202,6 +247,13 @@ export function OutreachBatch() {
             type="button"
           >
             Load queue
+          </button>
+          <button
+            className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium"
+            onClick={loadSavedContacts}
+            type="button"
+          >
+            Load saved contacts
           </button>
           <span className="text-sm text-[var(--muted)]">
             {queue.length > 0
