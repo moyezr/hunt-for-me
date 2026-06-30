@@ -1,20 +1,12 @@
+import {
+  getDueFollowUpContacts,
+  getInitialOutreachContacts,
+} from "@/lib/outreach-queue";
 import { getPipelineSummary } from "@/lib/pipeline";
 import type { Contact, Job } from "@/lib/types";
 
 const linkedinNoteTarget = 15;
 const linkedinDmTarget = 10;
-
-function isDue(value: string | null) {
-  return Boolean(value && new Date(value) <= new Date());
-}
-
-function isActionableFollowUp(contact: Contact) {
-  return (
-    contact.status !== "responded" &&
-    contact.status !== "closed" &&
-    isDue(contact.followUpDate)
-  );
-}
 
 export function getDailyPlan(input: {
   jobs: Job[];
@@ -23,10 +15,8 @@ export function getDailyPlan(input: {
   linkedinDmsSent: number;
 }) {
   const pipeline = getPipelineSummary(input.jobs);
-  const followUpsDue = input.contacts.filter(isActionableFollowUp).length;
-  const unsentContacts = input.contacts.filter(
-    (contact) => contact.status === "new" || contact.status === "drafted",
-  ).length;
+  const followUpsDue = getDueFollowUpContacts(input.contacts).length;
+  const unsentContacts = getInitialOutreachContacts(input.contacts).length;
 
   return {
     applications: pipeline,

@@ -3,18 +3,13 @@ import { ContactStatusSelect } from "@/app/outreach/contact-status-select";
 import { OutreachBatch } from "@/app/outreach/outreach-batch";
 import { OutreachTemplateEditor } from "@/app/outreach/outreach-template-editor";
 import { countSentMessagesToday, getContacts } from "@/lib/db";
+import { getDueFollowUpContacts } from "@/lib/outreach-queue";
 import { getOutreachTemplates } from "@/lib/outreach-templates";
 
 export default function OutreachPage() {
   const contacts = getContacts();
   const templates = getOutreachTemplates();
-  const due = contacts.filter(
-    (contact) =>
-      contact.followUpDate &&
-      new Date(contact.followUpDate) <= new Date() &&
-      contact.status !== "responded" &&
-      contact.status !== "closed",
-  );
+  const due = getDueFollowUpContacts(contacts);
   const linkedinNotesSent = countSentMessagesToday("linkedin", "linkedin_note");
   const linkedinDmsSent = countSentMessagesToday("linkedin", "linkedin_dm");
 

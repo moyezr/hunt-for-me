@@ -31,6 +31,10 @@ import { getDailyPlan } from "@/lib/daily-plan";
 import { countSentContactsForDay } from "@/lib/db";
 import { createId } from "@/lib/id";
 import {
+  getDueFollowUpContacts,
+  getInitialOutreachContacts,
+} from "@/lib/outreach-queue";
+import {
   buildOutreachPrompt,
   getOutreachTemplate,
   validateOutreachTemplates,
@@ -573,6 +577,41 @@ test("normalizes flexible contact import headers", () => {
     notes: "hiring applied AI engineers",
   });
   assert.equal(normalizeContactImportRow({ name: "Missing Title" }), null);
+});
+
+test("outreach queues exclude replied and inactive contacts", () => {
+  const now = new Date("2026-07-01T10:00:00.000Z");
+  const dueDate = "2026-07-01T09:00:00.000Z";
+  const futureDate = "2026-07-02T09:00:00.000Z";
+  const contacts = [
+    contactFixture({ id: "con_new", status: "new" }),
+    contactFixture({ id: "con_drafted", status: "drafted" }),
+    contactFixture({ id: "con_sent", status: "sent", followUpDate: dueDate }),
+    contactFixture({
+      id: "con_future",
+      status: "sent",
+      followUpDate: futureDate,
+    }),
+    contactFixture({
+      id: "con_responded",
+      status: "responded",
+      followUpDate: dueDate,
+    }),
+    contactFixture({
+      id: "con_closed",
+      status: "closed",
+      followUpDate: dueDate,
+    }),
+  ];
+
+  assert.deepEqual(
+    getInitialOutreachContacts(contacts).map((contact) => contact.id),
+    ["con_new", "con_drafted"],
+  );
+  assert.deepEqual(
+    getDueFollowUpContacts(contacts, now).map((contact) => contact.id),
+    ["con_sent"],
+  );
 });
 
 test("builds a daily job hunt operating plan", () => {

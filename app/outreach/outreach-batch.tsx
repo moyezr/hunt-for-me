@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { maxOutreachDraftBatchSize, takeBatch } from "@/lib/batch-limits";
+import {
+  getDueFollowUpContacts,
+  getInitialOutreachContacts,
+} from "@/lib/outreach-queue";
 import type { Contact, OutreachMessage } from "@/lib/types";
 import { defaultPlatformForChannel } from "@/lib/validation";
 
@@ -115,11 +119,9 @@ export function OutreachBatch({
   }
 
   function loadSavedContacts() {
-    const contacts = savedContacts
-      .filter(
-        (contact) => contact.status !== "sent" && contact.status !== "closed",
-      )
-      .map((contact) => contactToQueueContact(contact, "initial"));
+    const contacts = getInitialOutreachContacts(savedContacts).map((contact) =>
+      contactToQueueContact(contact, "initial"),
+    );
 
     setQueue(contacts);
     setQueueIndex(0);
@@ -140,12 +142,9 @@ export function OutreachBatch({
   }
 
   function loadDueFollowUps() {
-    const contacts = dueContacts
-      .filter(
-        (contact) =>
-          contact.status !== "responded" && contact.status !== "closed",
-      )
-      .map((contact) => contactToQueueContact(contact, "follow-up"));
+    const contacts = getDueFollowUpContacts(dueContacts).map((contact) =>
+      contactToQueueContact(contact, "follow-up"),
+    );
 
     setQueue(contacts);
     setQueueIndex(0);
