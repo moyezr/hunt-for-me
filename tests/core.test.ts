@@ -14,6 +14,7 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
   fallbackAnswer,
+  getOpenRouterModel,
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
@@ -92,6 +93,20 @@ test("normalizes salary answers to the required phrase", () => {
     enforceSalaryGuardrail("Expected CTC is 12-18 LPA.", "salary"),
     "Expected CTC is 12–18 LPA.",
   );
+});
+
+test("resolves configured OpenRouter model alias", () => {
+  const previous = process.env.OPENROUTER_MODEL;
+  try {
+    process.env.OPENROUTER_MODEL = "gpt-5.5-min";
+    assert.equal(getOpenRouterModel(), "openai/gpt-5-mini");
+  } finally {
+    if (previous === undefined) {
+      delete process.env.OPENROUTER_MODEL;
+    } else {
+      process.env.OPENROUTER_MODEL = previous;
+    }
+  }
 });
 
 test("repairs generic application answers with company and role context", () => {

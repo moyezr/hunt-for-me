@@ -24,8 +24,8 @@ function readPrompt(name: string) {
   return fs.readFileSync(path.join(process.cwd(), "prompts", name), "utf8");
 }
 
-function getOpenRouterModel() {
-  const configured = process.env.OPENROUTER_MODEL ?? "openai/gpt-5-mini";
+export function getOpenRouterModel() {
+  const configured = process.env.OPENROUTER_MODEL ?? "gpt-5.5-min";
   return modelAliases[configured] ?? configured;
 }
 
