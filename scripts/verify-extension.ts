@@ -88,9 +88,15 @@ const fixtureHtml = `<!doctype html>
           Expected CTC
           <input id="salary" type="text" />
         </label>
+        <button id="submit-application" type="submit">Submit application</button>
       </form>
       <script>
         window.hfmEvents = [];
+        window.hfmSubmitted = false;
+        document.querySelector("form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          window.hfmSubmitted = true;
+        });
         for (const element of document.querySelectorAll("textarea, input, select")) {
           element.addEventListener("input", () => window.hfmEvents.push(element.id + ":input"));
           element.addEventListener("change", () => window.hfmEvents.push(element.id + ":change"));
@@ -226,6 +232,7 @@ try {
   const fullName = await page.locator("#full-name").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
   const events = await page.evaluate(() => window.hfmEvents);
+  const submitted = await page.evaluate(() => window.hfmSubmitted);
 
   if (!filled.includes("SignalWorks AI")) {
     throw new Error("Approved answer was not filled into the textarea");
@@ -235,6 +242,9 @@ try {
   }
   if (workMode !== "remote") {
     throw new Error("Select field was not matched and filled by option text");
+  }
+  if (submitted) {
+    throw new Error("Extension submitted the application form while filling");
   }
 
   if (

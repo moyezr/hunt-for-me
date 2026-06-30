@@ -11,5 +11,6 @@ declare global {
     };
     __hfmContentListener: Runtime.MessageListener;
     hfmEvents: string[];
+    hfmSubmitted: boolean;
   }
 }
