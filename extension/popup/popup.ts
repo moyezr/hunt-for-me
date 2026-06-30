@@ -270,7 +270,12 @@ scanButton?.addEventListener("click", async () => {
     clearApproval();
     renderDrafts();
 
-    setStatus("Review and edit before applying. Nothing will be submitted.");
+    const skippedFields = Math.max(0, fields.length - answerFields.length);
+    setStatus(
+      skippedFields > 0
+        ? `Review and edit before applying. ${skippedFields} extra field(s) need manual review. Nothing will be submitted.`
+        : "Review and edit before applying. Nothing will be submitted.",
+    );
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Scan failed");
   }

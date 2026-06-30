@@ -627,6 +627,10 @@ try {
     .locator("#status")
     .getByText("Review and edit before applying")
     .waitFor();
+  await popupPage
+    .locator("#status")
+    .getByText("4 extra field(s) need manual review")
+    .waitFor();
 
   if (!popupApiRequests.includes("/api/answers")) {
     throw new Error("Popup did not call the batch answers endpoint");
