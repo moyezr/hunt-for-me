@@ -1,4 +1,5 @@
 import { generateAnswer } from "@/lib/ai";
+import { maxAnswerBatchSize } from "@/lib/batch-limits";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 
@@ -32,8 +33,11 @@ export async function POST(request: Request) {
       return jsonError("At least one question is required", 400);
     }
 
-    if (questions.length > 20) {
-      return jsonError("Batch answer requests are capped at 20 questions", 400);
+    if (questions.length > maxAnswerBatchSize) {
+      return jsonError(
+        `Batch answer requests are capped at ${maxAnswerBatchSize} questions`,
+        400,
+      );
     }
 
     const invalidQuestion = questions.find(

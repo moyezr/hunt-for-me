@@ -1,4 +1,5 @@
 import { generateOutreach } from "@/lib/ai";
+import { maxOutreachDraftBatchSize } from "@/lib/batch-limits";
 import { addMessageToContact, createContact, getContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
@@ -35,8 +36,11 @@ export async function POST(request: Request) {
       return jsonError("At least one contact is required", 400);
     }
 
-    if (contacts.length > 20) {
-      return jsonError("Batch outreach drafts are capped at 20 contacts", 400);
+    if (contacts.length > maxOutreachDraftBatchSize) {
+      return jsonError(
+        `Batch outreach drafts are capped at ${maxOutreachDraftBatchSize} contacts`,
+        400,
+      );
     }
 
     const invalidContact = contacts.find((contact) => {

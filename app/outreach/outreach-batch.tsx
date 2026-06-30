@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { maxOutreachDraftBatchSize, takeBatch } from "@/lib/batch-limits";
 import type { Contact, OutreachMessage } from "@/lib/types";
 import { defaultPlatformForChannel } from "@/lib/validation";
 
@@ -269,7 +270,8 @@ export function OutreachBatch({
           }
         : contact,
     );
-    setStatus(`Drafting ${remaining.length} queued message(s)...`);
+    const batch = takeBatch(remaining, maxOutreachDraftBatchSize);
+    setStatus(`Drafting ${batch.items.length} queued message(s)...`);
 
     try {
       const response = await fetch("/api/messages", {
@@ -277,7 +279,7 @@ export function OutreachBatch({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           channel,
-          contacts: remaining.map((contact) => ({
+          contacts: batch.items.map((contact) => ({
             id: contact.id,
             name: contact.name,
             title: contact.title,
@@ -312,7 +314,9 @@ export function OutreachBatch({
       setQueue(nextQueue);
       setDraft(nextDrafts[queueIndex] ?? null);
       setStatus(
-        `${payload.data.drafts.length} draft(s) ready. Review each before marking sent.`,
+        batch.skipped > 0
+          ? `${payload.data.drafts.length} draft(s) ready. ${batch.skipped} contact(s) remain for the next batch.`
+          : `${payload.data.drafts.length} draft(s) ready. Review each before marking sent.`,
       );
       router.refresh();
     } catch (error) {

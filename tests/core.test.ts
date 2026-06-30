@@ -18,6 +18,7 @@ import {
   getApplicationPrompt,
   getOpenRouterModel,
 } from "@/lib/ai";
+import { maxOutreachDraftBatchSize, takeBatch } from "@/lib/batch-limits";
 import { contactIdentityKey } from "@/lib/contact-identity";
 import { normalizeContactImportRow } from "@/lib/contact-import";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
@@ -217,6 +218,16 @@ test("parses CSV objects with quoted values", () => {
   assert.deepEqual(parseCsvObjects('name,notes\nAsha,"builds, ships"'), [
     { name: "Asha", notes: "builds, ships" },
   ]);
+});
+
+test("takes capped batches with remaining count", () => {
+  const result = takeBatch(
+    Array.from({ length: 22 }, (_, index) => index),
+    maxOutreachDraftBatchSize,
+  );
+
+  assert.equal(result.items.length, 20);
+  assert.equal(result.skipped, 2);
 });
 
 test("scores matching AI engineering jobs above scraper threshold", () => {
