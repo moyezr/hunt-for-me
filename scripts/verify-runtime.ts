@@ -143,17 +143,31 @@ const batchAnswers = await api<{
     questions: [
       { id: "name", question: "Full name" },
       { id: "salary", question: "Expected CTC" },
+      {
+        id: "work_mode",
+        question: "Preferred work mode\nOptions: Select one, Remote, Hybrid",
+      },
+      {
+        id: "interview",
+        question: "Preferred interview format\nOptions: Phone, Video",
+      },
     ],
     company: `Runtime Smoke ${suffix}`,
     role: "Applied AI Engineer",
   }),
 );
 if (
-  batchAnswers.answers.length !== 2 ||
+  batchAnswers.answers.length !== 4 ||
   batchAnswers.answers[0].answer !== "Moyez Rabbani" ||
-  !batchAnswers.answers[1].answer.includes("12–18 LPA")
+  !batchAnswers.answers[1].answer.includes("12–18 LPA") ||
+  batchAnswers.answers[2].answer !== "Remote" ||
+  batchAnswers.answers[2].category !== "option_choice" ||
+  batchAnswers.answers[3].answer !== "Video" ||
+  batchAnswers.answers[3].category !== "option_choice"
 ) {
-  throw new Error("Batch answers did not preserve order and guardrails");
+  throw new Error(
+    "Batch answers did not preserve order, guardrails, and option choices",
+  );
 }
 
 await apiFailure(
