@@ -283,8 +283,10 @@ try {
   const workModeField = scan.fields.find((field) =>
     field.label.includes("Preferred work mode"),
   );
-  const videoField = scan.fields.find(
-    (field) => field.type === "radio" && field.label.includes("Video"),
+  const interviewField = scan.fields.find(
+    (field) =>
+      field.type === "radio" &&
+      field.label.includes("Preferred interview format"),
   );
   const confirmField = scan.fields.find((field) =>
     field.label.includes("I confirm these details are accurate"),
@@ -304,11 +306,14 @@ try {
   if (!workModeField?.options?.includes("Remote")) {
     throw new Error("Expected select options were not detected");
   }
-  if (!videoField?.selector.includes('value="video"')) {
-    throw new Error("Expected radio field with unique value selector");
+  if (!interviewField?.selector.includes('name="interview-format"')) {
+    throw new Error("Expected radio group field with shared name selector");
   }
-  if (!videoField.options?.some((option) => /video/i.test(option))) {
-    throw new Error("Expected radio field options to include the choice label");
+  if (
+    !interviewField.options?.some((option) => /phone/i.test(option)) ||
+    !interviewField.options?.some((option) => /video/i.test(option))
+  ) {
+    throw new Error("Expected radio group options to include every choice");
   }
   if (!confirmField) {
     throw new Error("Expected checkbox field was not detected");
@@ -373,7 +378,7 @@ try {
         resolve,
       );
     });
-  }, videoField.selector);
+  }, interviewField.selector);
 
   await page.evaluate(async (selector) => {
     await new Promise((resolve) => {
