@@ -103,6 +103,10 @@ export function classifyQuestion(question: string) {
   const text = question.toLowerCase();
   const compact = text.replace(/[^a-z0-9]/g, "");
 
+  if (extractQuestionOptions(question).length > 0) {
+    return "option_choice";
+  }
+
   if (
     text.includes("full name") ||
     text === "name" ||
@@ -221,6 +225,62 @@ export function classifyQuestion(question: string) {
   return "general";
 }
 
+export function extractQuestionOptions(question: string) {
+  const match = question.match(/(?:^|\n)options:\s*(.+)$/i);
+  if (!match) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      match[1]
+        .split(",")
+        .map((option) => option.trim())
+        .filter(Boolean)
+        .filter((option) => !/^select\b/i.test(option)),
+    ),
+  );
+}
+
+export function deterministicOptionAnswer(question: string) {
+  const options = extractQuestionOptions(question);
+  if (options.length === 0) {
+    return null;
+  }
+
+  const text = question.toLowerCase();
+  const pick = (patterns: RegExp[]) =>
+    patterns
+      .map((pattern) =>
+        options.find((option) => pattern.test(option.toLowerCase())),
+      )
+      .find(Boolean);
+
+  if (
+    text.includes("work mode") ||
+    text.includes("work location") ||
+    text.includes("preferred location") ||
+    text.includes("remote")
+  ) {
+    return pick([/\bremote\b/, /\bhybrid\b/]) ?? options[0];
+  }
+
+  if (text.includes("interview")) {
+    return pick([/\bvideo\b/, /\bphone\b/]) ?? options[0];
+  }
+
+  if (
+    text.includes("confirm") ||
+    text.includes("agree") ||
+    text.includes("consent") ||
+    text.includes("accurate")
+  ) {
+    return pick([/\byes\b/, /\bagree\b/, /\btrue\b/]) ?? "Yes";
+  }
+
+  return options[0];
+}
+
 export function extractKeywords(text = "") {
   const ignored = new Set([
     "with",
@@ -315,6 +375,15 @@ export function deterministicProfileAnswer(category: string) {
   }
 }
 
+export function deterministicAnswerForQuestion(question: string) {
+  const optionAnswer = deterministicOptionAnswer(question);
+  if (optionAnswer) {
+    return optionAnswer;
+  }
+
+  return deterministicProfileAnswer(classifyQuestion(question));
+}
+
 export function fallbackAnswer(input: AnswerRequest) {
   const profile = getProfile();
   const category = classifyQuestion(input.question);
@@ -388,6 +457,7 @@ export function enforceAnswerSpecificity({
       "location",
       "education",
       "confirmation",
+      "option_choice",
       "notice_period",
       "salary",
     ].includes(category)
@@ -596,7 +666,7 @@ export async function generateAnswer(
 
   const category = classifyQuestion(input.question);
   const keywords = extractKeywords(input.jdText);
-  const deterministicAnswer = deterministicProfileAnswer(category);
+  const deterministicAnswer = deterministicAnswerForQuestion(input.question);
 
   if (deterministicAnswer) {
     saveAnswerForJob({

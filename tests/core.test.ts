@@ -5,6 +5,8 @@ import path from "node:path";
 import test from "node:test";
 import {
   classifyQuestion,
+  deterministicAnswerForQuestion,
+  deterministicOptionAnswer,
   deterministicProfileAnswer,
   enforceAnswerSpecificity,
   enforceKeywordCoverage,
@@ -13,6 +15,7 @@ import {
   enforceSalaryGuardrail,
   extractKeywords,
   extractProfileSkillKeywords,
+  extractQuestionOptions,
   fallbackAnswer,
   fallbackOutreachMessage,
   generateJobFitScore,
@@ -59,6 +62,15 @@ test("classifies profile fields", () => {
   );
 });
 
+test("classifies option choice fields", () => {
+  assert.equal(
+    classifyQuestion(
+      "Preferred work mode\nOptions: Select one, Remote, Hybrid",
+    ),
+    "option_choice",
+  );
+});
+
 test("classifies confirmation fields", () => {
   assert.equal(
     classifyQuestion("I confirm these details are accurate"),
@@ -96,6 +108,33 @@ test("resolves deterministic profile answers without AI", () => {
     /Software engineering and applied AI experience/,
   );
   assert.equal(deterministicProfileAnswer("confirmation"), "Yes");
+});
+
+test("resolves deterministic option answers", () => {
+  assert.deepEqual(
+    extractQuestionOptions(
+      "Preferred work mode\nOptions: Select one, Remote, Hybrid",
+    ),
+    ["Remote", "Hybrid"],
+  );
+  assert.equal(
+    deterministicOptionAnswer(
+      "Preferred work mode\nOptions: Select one, Remote, Hybrid",
+    ),
+    "Remote",
+  );
+  assert.equal(
+    deterministicOptionAnswer(
+      "Preferred interview format\nOptions: Phone, Video",
+    ),
+    "Video",
+  );
+  assert.equal(
+    deterministicAnswerForQuestion(
+      "Preferred interview format\nOptions: Phone, Video",
+    ),
+    "Video",
+  );
 });
 
 test("recommends tailored resumes by role", () => {
@@ -179,6 +218,15 @@ test("keeps deterministic and salary answers concise", () => {
       category: "confirmation",
     }),
     "Yes",
+  );
+  assert.equal(
+    enforceAnswerSpecificity({
+      answer: "Remote",
+      company: "SignalWorks AI",
+      role: "Applied AI Engineer",
+      category: "option_choice",
+    }),
+    "Remote",
   );
 });
 
