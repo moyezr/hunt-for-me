@@ -461,6 +461,34 @@ test("builds a daily job hunt operating plan", () => {
   assert.equal(plan.outreach.unsentContacts, 1);
 });
 
+test("daily plan excludes closed and responded follow-ups", () => {
+  const dueDate = new Date(Date.now() - 1000).toISOString();
+  const plan = getDailyPlan({
+    jobs: [],
+    contacts: [
+      contactFixture({
+        id: "con_due",
+        status: "sent",
+        followUpDate: dueDate,
+      }),
+      contactFixture({
+        id: "con_responded",
+        status: "responded",
+        followUpDate: dueDate,
+      }),
+      contactFixture({
+        id: "con_closed",
+        status: "closed",
+        followUpDate: dueDate,
+      }),
+    ],
+    linkedinNotesSent: 0,
+    linkedinDmsSent: 0,
+  });
+
+  assert.equal(plan.outreach.followUpsDue, 1);
+});
+
 test("counts linkedin outreach caps from sent contact history", () => {
   const now = new Date();
   const followUpDate = new Date(now);
