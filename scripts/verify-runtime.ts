@@ -204,6 +204,57 @@ if (!createdJob.job.id.startsWith("job_")) {
   throw new Error(`Unexpected job id: ${createdJob.job.id}`);
 }
 
+const refreshJob = await api<{
+  job: {
+    id: string;
+    url: string;
+    platform: string;
+    jdText: string;
+    fitScore: number | null;
+    status: string;
+  };
+}>(
+  "/api/jobs",
+  postJson({
+    title: `Runtime Refresh Engineer ${suffix}`,
+    company: `Runtime Refresh Co ${suffix}`,
+    url: "",
+    platform: "naukri",
+  }),
+  201,
+);
+const refreshedJob = await api<{
+  job: {
+    id: string;
+    url: string;
+    platform: string;
+    jdText: string;
+    fitScore: number | null;
+    status: string;
+  };
+}>(
+  "/api/jobs",
+  postJson({
+    title: `Runtime Refresh Engineer ${suffix}`,
+    company: `Runtime Refresh Co ${suffix}`,
+    url: `https://example.com/jobs/refresh-${suffix}`,
+    platform: "manual",
+    jdText:
+      "Updated JD with Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
+    fitScore: 9,
+  }),
+  201,
+);
+if (
+  refreshedJob.job.id !== refreshJob.job.id ||
+  refreshedJob.job.url !== `https://example.com/jobs/refresh-${suffix}` ||
+  refreshedJob.job.platform !== "naukri" ||
+  refreshedJob.job.fitScore !== 9 ||
+  !refreshedJob.job.jdText.includes("Updated JD")
+) {
+  throw new Error("Discovered duplicate job metadata was not refreshed");
+}
+
 await apiFailure(
   "/api/jobs",
   postJson({

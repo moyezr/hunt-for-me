@@ -173,6 +173,29 @@ export function createJob(input: {
   }
 
   if (existing) {
+    const nextUrl = input.url.trim() || existing.url;
+    const inputPlatform = input.platform.trim();
+    const nextPlatform =
+      inputPlatform && inputPlatform !== "manual"
+        ? inputPlatform
+        : existing.platform || inputPlatform;
+    const nextJdText = input.jdText?.trim() || existing.jdText;
+    const nextFitScore = input.fitScore ?? existing.fitScore;
+    const nextNotes = input.notes?.trim() || existing.notes;
+
+    getDb()
+      .prepare(
+        "UPDATE jobs SET url = ?, platform = ?, jd_text = ?, fit_score = ?, notes = ? WHERE id = ?",
+      )
+      .run(
+        nextUrl,
+        nextPlatform,
+        nextJdText,
+        nextFitScore,
+        nextNotes,
+        existing.id,
+      );
+
     if (input.status && input.status !== "discovered") {
       return {
         duplicate: false as const,
@@ -184,7 +207,7 @@ export function createJob(input: {
       };
     }
 
-    return { duplicate: false as const, job: existing };
+    return { duplicate: false as const, job: getJob(existing.id) };
   }
 
   const now = new Date().toISOString();
