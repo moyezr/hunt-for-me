@@ -169,7 +169,7 @@ export function createJob(input: {
 }) {
   const existing = findJobByCompanyTitle(input.company, input.title);
   if (existing && existing.status !== "discovered") {
-    return { duplicate: true as const, job: existing };
+    return { duplicate: true as const, existing: true as const, job: existing };
   }
 
   if (existing) {
@@ -199,6 +199,7 @@ export function createJob(input: {
     if (input.status && input.status !== "discovered") {
       return {
         duplicate: false as const,
+        existing: true as const,
         job: updateJob({
           id: existing.id,
           status: input.status,
@@ -207,7 +208,11 @@ export function createJob(input: {
       };
     }
 
-    return { duplicate: false as const, job: getJob(existing.id) };
+    return {
+      duplicate: false as const,
+      existing: true as const,
+      job: getJob(existing.id),
+    };
   }
 
   const now = new Date().toISOString();
@@ -233,7 +238,11 @@ export function createJob(input: {
       now,
     );
 
-  return { duplicate: false as const, job: getJob(id) };
+  return {
+    duplicate: false as const,
+    existing: false as const,
+    job: getJob(id),
+  };
 }
 
 export function getJob(id: string) {

@@ -29,6 +29,11 @@ export type ScrapeResult = {
 };
 
 type RawScrapedJob = Omit<ScrapedJob, "fitScore">;
+type CreatedJobResult = {
+  duplicate: boolean;
+  existing: boolean;
+  job: Job;
+};
 
 type PlatformConfig = {
   platform: ScrapePlatform;
@@ -182,6 +187,10 @@ export function scoreJob(jdText: string) {
   return heuristicJobScore(jdText);
 }
 
+export function isNewScrapedJob(created: CreatedJobResult) {
+  return !created.duplicate && !created.existing;
+}
+
 async function scrapePlatform(config: PlatformConfig, input: ScrapeInput) {
   const { chromium } = await import("playwright");
   const { query, location, maxPerPlatform } = normalizeQuery(input);
@@ -244,10 +253,10 @@ export async function scrapeJobs(input: ScrapeInput): Promise<ScrapeResult> {
         }
 
         const created = createJob(job);
-        if (created.duplicate) {
-          duplicates.push(created.job);
-        } else {
+        if (isNewScrapedJob(created)) {
           saved.push(created.job);
+        } else {
+          duplicates.push(created.job);
         }
       }
     } catch (error) {

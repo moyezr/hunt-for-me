@@ -32,7 +32,7 @@ import {
 } from "@/lib/outreach-templates";
 import { getNextApplicationJobs, getPipelineSummary } from "@/lib/pipeline";
 import { recommendResume } from "@/lib/resumes";
-import { scoreJob } from "@/lib/scraper";
+import { isNewScrapedJob, scoreJob } from "@/lib/scraper";
 import type { Contact, Job } from "@/lib/types";
 import {
   defaultPlatformForChannel,
@@ -240,6 +240,23 @@ test("scores matching AI engineering jobs above scraper threshold", () => {
 test("scores unrelated jobs below scraper save threshold", () => {
   const result = scoreJob("Restaurant manager role with inventory scheduling.");
   assert.ok(result.score < 6);
+});
+
+test("counts only newly created scraped jobs as saved", () => {
+  const job = jobFixture({ id: "job_existing" });
+
+  assert.equal(
+    isNewScrapedJob({ duplicate: false, existing: false, job }),
+    true,
+  );
+  assert.equal(
+    isNewScrapedJob({ duplicate: false, existing: true, job }),
+    false,
+  );
+  assert.equal(
+    isNewScrapedJob({ duplicate: true, existing: true, job }),
+    false,
+  );
 });
 
 test("uses OpenRouter for job fit scoring when configured", async () => {
