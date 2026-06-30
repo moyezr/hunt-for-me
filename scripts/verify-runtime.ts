@@ -156,6 +156,19 @@ if (
   throw new Error("Batch answers did not preserve order and guardrails");
 }
 
+await apiFailure(
+  "/api/answers",
+  postJson({
+    questions: Array.from({ length: 21 }, (_, index) => ({
+      id: `question_${index}`,
+      question: `Question ${index + 1}`,
+    })),
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+  400,
+);
+
 const resume = await api<{
   resume: { filename: string; exists: boolean };
 }>(
@@ -337,6 +350,19 @@ if (
 ) {
   throw new Error("Batch outreach drafts did not include company context");
 }
+
+await apiFailure(
+  "/api/messages",
+  postJson({
+    channel: "linkedin_note",
+    contacts: Array.from({ length: 21 }, (_, index) => ({
+      name: `Runtime Batch Contact ${suffix}-${index}`,
+      title: "Recruiter",
+      company: `Runtime Batch Cap ${suffix}`,
+    })),
+  }),
+  400,
+);
 
 const templates = await api<{
   config: { channels: { linkedin_note: { maxChars: number } } };
