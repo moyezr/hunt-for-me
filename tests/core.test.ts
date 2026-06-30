@@ -14,6 +14,7 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
   fallbackAnswer,
+  generateJobFitScore,
   getOpenRouterModel,
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
@@ -215,6 +216,38 @@ test("scores matching AI engineering jobs above scraper threshold", () => {
 test("scores unrelated jobs below scraper save threshold", () => {
   const result = scoreJob("Restaurant manager role with inventory scheduling.");
   assert.ok(result.score < 6);
+});
+
+test("uses OpenRouter for job fit scoring when configured", async () => {
+  const previousKey = process.env.OPENROUTER_API_KEY;
+  const previousFetch = globalThis.fetch;
+
+  try {
+    process.env.OPENROUTER_API_KEY = "test-key";
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { content: '{"score":8}' } }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+
+    const result = await generateJobFitScore({
+      title: "Applied AI Engineer",
+      company: "SignalWorks",
+      jdText: "Customer-facing role building RAG workflows and AI agents.",
+    });
+
+    assert.equal(result.score, 8);
+    assert.equal(result.source, "ai");
+  } finally {
+    if (previousKey === undefined) {
+      delete process.env.OPENROUTER_API_KEY;
+    } else {
+      process.env.OPENROUTER_API_KEY = previousKey;
+    }
+    globalThis.fetch = previousFetch;
+  }
 });
 
 test("profile is present and not empty", () => {

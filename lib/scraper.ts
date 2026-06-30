@@ -1,5 +1,5 @@
+import { generateJobFitScore, heuristicJobScore } from "@/lib/ai";
 import { createJob } from "@/lib/db";
-import { getProfile } from "@/lib/profile";
 import type { Job } from "@/lib/types";
 
 export type ScrapePlatform = "naukri" | "indeed" | "wellfound";
@@ -179,29 +179,7 @@ async function randomDelay() {
 }
 
 export function scoreJob(jdText: string) {
-  const profile = getProfile();
-  const text = jdText.toLowerCase();
-  const matched = profile.skills.filter((skill) =>
-    text.includes(skill.toLowerCase()),
-  );
-  const roleMatched = profile.preferredRoles.some((role) =>
-    text.includes(role.toLowerCase()),
-  );
-  const aiRoleMatched = /\b(ai|llm|rag|agent|applied ai)\b/i.test(jdText);
-  const score = Math.min(
-    10,
-    Math.max(
-      1,
-      Math.ceil(matched.length / 1.5) +
-        (roleMatched ? 4 : 0) +
-        (aiRoleMatched ? 2 : 0),
-    ),
-  );
-
-  return {
-    score,
-    matchedSkills: matched,
-  };
+  return heuristicJobScore(jdText);
 }
 
 async function scrapePlatform(config: PlatformConfig, input: ScrapeInput) {
@@ -236,10 +214,12 @@ async function scrapePlatform(config: PlatformConfig, input: ScrapeInput) {
       throw new Error("No job cards found on the results page");
     }
 
-    return rawJobs.slice(0, maxPerPlatform).map((job) => {
-      const scored = scoreJob(`${job.title} ${job.company} ${job.jdText}`);
-      return { ...job, fitScore: scored.score };
-    });
+    return Promise.all(
+      rawJobs.slice(0, maxPerPlatform).map(async (job) => {
+        const scored = await generateJobFitScore(job);
+        return { ...job, fitScore: scored.score };
+      }),
+    );
   } finally {
     await browser.close();
   }

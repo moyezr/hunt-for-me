@@ -29,6 +29,57 @@ export function getOpenRouterModel() {
   return modelAliases[configured] ?? configured;
 }
 
+export function heuristicJobScore(jdText: string) {
+  const profile = getProfile();
+  const text = jdText.toLowerCase();
+  const matched = profile.skills.filter((skill) =>
+    text.includes(skill.toLowerCase()),
+  );
+  const roleMatched = profile.preferredRoles.some((role) =>
+    text.includes(role.toLowerCase()),
+  );
+  const aiRoleMatched = /\b(ai|llm|rag|agent|applied ai)\b/i.test(jdText);
+  const score = Math.min(
+    10,
+    Math.max(
+      1,
+      Math.ceil(matched.length / 1.5) +
+        (roleMatched ? 4 : 0) +
+        (aiRoleMatched ? 2 : 0),
+    ),
+  );
+
+  return {
+    score,
+    matchedSkills: matched,
+  };
+}
+
+function parseScore(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const jsonMatch = value.match(/\{[\s\S]*\}/);
+  const raw = jsonMatch?.[0] ?? value;
+
+  try {
+    const parsed = JSON.parse(raw) as { score?: unknown };
+    const score =
+      typeof parsed.score === "number" ? parsed.score : Number(parsed.score);
+    if (Number.isFinite(score)) {
+      return Math.min(10, Math.max(1, Math.round(score)));
+    }
+  } catch {
+    const numeric = Number(value.match(/\b([1-9]|10)\b/)?.[1]);
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
 export function classifyQuestion(question: string) {
   const text = question.toLowerCase();
   const compact = text.replace(/[^a-z0-9]/g, "");
@@ -410,6 +461,58 @@ async function callOpenRouter(messages: ChatMessage[]) {
   };
 
   return data.choices?.[0]?.message?.content?.trim() || null;
+}
+
+export async function generateJobFitScore({
+  title,
+  company,
+  jdText,
+}: {
+  title: string;
+  company: string;
+  jdText: string;
+}) {
+  const fallback = heuristicJobScore(`${title} ${company} ${jdText}`);
+  const profile = getProfile();
+
+  try {
+    const response = await callOpenRouter([
+      {
+        role: "system",
+        content:
+          "You score jobs for Moyez Rabbani. Return only compact JSON with a numeric score from 1 to 10. Score 6+ only when the role is a credible fit for his AI engineering, RAG, voice agents, full-stack SaaS, customer-facing ownership, and startup/founding engineer profile.",
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          candidate: {
+            headline: profile.headline,
+            preferredRoles: profile.preferredRoles,
+            skills: profile.skills,
+            locationPreferences: profile.locationPreferences,
+          },
+          job: {
+            title,
+            company,
+            jdText: jdText.slice(0, 3500),
+          },
+          responseFormat: { score: "integer 1-10" },
+        }),
+      },
+    ]);
+    const score = parseScore(response);
+
+    return {
+      score: score ?? fallback.score,
+      matchedSkills: fallback.matchedSkills,
+      source: score === null ? "heuristic" : "ai",
+    };
+  } catch {
+    return {
+      ...fallback,
+      source: "heuristic",
+    };
+  }
 }
 
 export async function generateAnswer(
