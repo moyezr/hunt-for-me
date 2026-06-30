@@ -34,6 +34,7 @@ import {
   isContactStatus,
   isJobStatus,
   isOutreachChannel,
+  isScrapePlatform,
 } from "@/lib/validation";
 
 test("classifies salary questions", () => {
@@ -243,13 +244,15 @@ test("outreach template validation requires every channel", () => {
   );
 });
 
-test("validates API status and outreach channel enums", () => {
+test("validates API status, outreach channel, and scraper platform enums", () => {
   assert.equal(isJobStatus("applied"), true);
   assert.equal(isJobStatus("submitted"), false);
   assert.equal(isContactStatus("follow_up_due"), true);
   assert.equal(isContactStatus("archived"), false);
   assert.equal(isOutreachChannel("linkedin_dm"), true);
   assert.equal(isOutreachChannel("sms"), false);
+  assert.equal(isScrapePlatform("wellfound"), true);
+  assert.equal(isScrapePlatform("linkedin"), false);
 });
 
 test("removes salary language from outreach messages", () => {

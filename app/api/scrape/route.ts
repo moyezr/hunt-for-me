@@ -1,5 +1,6 @@
 import { jsonError, jsonOk } from "@/lib/http";
 import { type ScrapePlatform, scrapeJobs } from "@/lib/scraper";
+import { isScrapePlatform } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,17 @@ export async function POST(request: Request) {
       platforms?: ScrapePlatform[];
       maxPerPlatform?: number;
     };
+
+    if (
+      body.platforms !== undefined &&
+      (!Array.isArray(body.platforms) ||
+        body.platforms.some((platform) => !isScrapePlatform(platform)))
+    ) {
+      return jsonError(
+        "Invalid scrape platform. Use naukri, indeed, or wellfound",
+        400,
+      );
+    }
 
     const result = await scrapeJobs(body);
 

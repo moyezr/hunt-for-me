@@ -212,6 +212,16 @@ if (appliedJob.job.status !== "applied" || !appliedJob.job.appliedAt) {
 }
 
 await apiFailure(
+  "/api/scrape",
+  postJson({
+    query: "AI Engineer",
+    location: "India Remote",
+    platforms: ["linkedin"],
+  }),
+  400,
+);
+
+await apiFailure(
   `/api/jobs/${createdJob.job.id}`,
   patchJson({ status: "submitted" }),
   400,
