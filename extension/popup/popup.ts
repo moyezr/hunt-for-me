@@ -12,6 +12,8 @@ const saveJobButton =
 const markAppliedButton =
   document.querySelector<HTMLButtonElement>("#markAppliedButton");
 const applyButton = document.querySelector<HTMLButtonElement>("#applyButton");
+const approveCheckbox =
+  document.querySelector<HTMLInputElement>("#approveCheckbox");
 const answersElement = document.querySelector<HTMLElement>("#answers");
 const statusElement = document.querySelector<HTMLElement>("#status");
 const pageContextElement = document.querySelector<HTMLElement>("#pageContext");
@@ -52,6 +54,27 @@ async function pingHealth() {
   }
 }
 
+function updateApplyState() {
+  if (!applyButton) {
+    return;
+  }
+
+  const isLoading = drafts.some((draft) => draft.category === "loading");
+  if (approveCheckbox) {
+    approveCheckbox.disabled = drafts.length === 0 || isLoading;
+  }
+
+  applyButton.disabled =
+    drafts.length === 0 || isLoading || !approveCheckbox?.checked;
+}
+
+function clearApproval() {
+  if (approveCheckbox) {
+    approveCheckbox.checked = false;
+  }
+  updateApplyState();
+}
+
 function renderDrafts() {
   if (!answersElement || !applyButton) {
     return;
@@ -70,14 +93,14 @@ function renderDrafts() {
     textarea.value = draft.answer;
     textarea.addEventListener("input", () => {
       draft.answer = textarea.value;
+      clearApproval();
     });
 
     wrapper.append(label, textarea);
     answersElement.append(wrapper);
   }
 
-  applyButton.disabled =
-    drafts.length === 0 || drafts.some((draft) => draft.category === "loading");
+  updateApplyState();
 }
 
 function updateContextUi() {
@@ -187,6 +210,7 @@ async function getAnswers(fields: DetectedField[]) {
 }
 
 function renderLoadingDrafts(fields: DetectedField[]) {
+  clearApproval();
   drafts = fields.map((field) => ({
     field,
     answer: "Generating...",
@@ -242,6 +266,7 @@ scanButton?.addEventListener("click", async () => {
     setStatus(`Generating answers for ${answerFields.length} fields...`);
     renderLoadingDrafts(answerFields);
     drafts = await getAnswers(answerFields);
+    clearApproval();
     renderDrafts();
 
     setStatus("Review and edit before applying. Nothing will be submitted.");
@@ -273,6 +298,8 @@ markAppliedButton?.addEventListener("click", async () => {
     );
   }
 });
+
+approveCheckbox?.addEventListener("change", updateApplyState);
 
 applyButton?.addEventListener("click", async () => {
   try {

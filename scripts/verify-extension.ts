@@ -34,6 +34,10 @@ const popupHtml = `<!doctype html>
       </div>
       <section hidden id="resumeRecommendation" class="resume"></section>
       <section id="answers"></section>
+      <label class="approval">
+        <input disabled id="approveCheckbox" type="checkbox" />
+        I reviewed and approve these answers
+      </label>
       <p id="status"></p>
     </main>
   </body>
@@ -602,10 +606,24 @@ try {
     throw new Error("Popup did not render batch-generated draft answers");
   }
 
-  if (await popupPage.locator("#applyButton").isDisabled()) {
-    throw new Error("Apply button was not enabled after answers loaded");
+  if (!(await popupPage.locator("#applyButton").isDisabled())) {
+    throw new Error("Apply button was enabled before explicit approval");
+  }
+  if (await popupPage.locator("#approveCheckbox").isDisabled()) {
+    throw new Error("Approval checkbox was not enabled after answers loaded");
   }
 
+  await popupPage.locator("#approveCheckbox").check();
+  if (await popupPage.locator("#applyButton").isDisabled()) {
+    throw new Error("Apply button was not enabled after explicit approval");
+  }
+
+  await popupPage.locator("#answers textarea").nth(2).fill("Edited answer");
+  if (!(await popupPage.locator("#applyButton").isDisabled())) {
+    throw new Error("Apply button stayed enabled after answer edit");
+  }
+
+  await popupPage.locator("#approveCheckbox").check();
   await popupPage.locator("#applyButton").click();
   if (
     popupFillAnswers.length !== 3 ||

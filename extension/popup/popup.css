@@ -83,6 +83,20 @@ button:disabled {
   overflow: auto;
 }
 
+.approval {
+  align-items: center;
+  color: #181b23;
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.approval input {
+  height: 14px;
+  width: 14px;
+}
+
 .answer {
   background: white;
   border: 1px solid #d9deea;
