@@ -106,6 +106,66 @@ const fixtureHtml = `<!doctype html>
   </body>
 </html>`;
 
+const platformFixtures = [
+  {
+    url: "https://in.indeed.com/viewjob?jk=applied-ai",
+    platform: "indeed",
+    company: "Indeed Signal Labs",
+    role: "AI Product Engineer",
+    html: `<!doctype html>
+      <html>
+        <body>
+          <main>
+            <h1 data-testid="jobsearch-JobInfoHeader-title">AI Product Engineer</h1>
+            <div data-testid="inlineHeader-companyName">Indeed Signal Labs</div>
+            <section data-testid="jobDescriptionText">Build AI workflow tools with TypeScript and Python.</section>
+            <form>
+              <label>Why this role?<textarea id="indeed-why"></textarea></label>
+            </form>
+          </main>
+        </body>
+      </html>`,
+  },
+  {
+    url: "https://wellfound.com/jobs/123-applied-ai",
+    platform: "wellfound",
+    company: "Wellfound Signal Labs",
+    role: "Founding AI Engineer",
+    html: `<!doctype html>
+      <html>
+        <body>
+          <main>
+            <h1 data-test="JobTitle">Founding AI Engineer</h1>
+            <a data-test="StartupHeader" href="/company/signal">Wellfound Signal Labs</a>
+            <article>Need a builder for RAG and agent workflows.</article>
+            <form>
+              <label>Portfolio<input id="wellfound-portfolio" type="url" /></label>
+            </form>
+          </main>
+        </body>
+      </html>`,
+  },
+  {
+    url: "https://www.linkedin.com/jobs/view/123",
+    platform: "linkedin",
+    company: "LinkedIn Signal Labs",
+    role: "Applied AI Engineer",
+    html: `<!doctype html>
+      <html>
+        <body>
+          <main>
+            <h1 class="jobs-unified-top-card__job-title">Applied AI Engineer</h1>
+            <a class="jobs-unified-top-card__company-name">LinkedIn Signal Labs</a>
+            <section class="job-description">Build AI products and full-stack workflows.</section>
+            <form>
+              <label>Phone<input id="linkedin-phone" type="tel" /></label>
+            </form>
+          </main>
+        </body>
+      </html>`,
+  },
+];
+
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -252,6 +312,45 @@ try {
     !events.includes("why-company:change")
   ) {
     throw new Error("React-compatible input/change events were not dispatched");
+  }
+
+  for (const fixture of platformFixtures) {
+    await page.route(fixture.url, (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: fixture.html,
+      }),
+    );
+    await page.goto(fixture.url);
+    await page.addScriptTag({ path: contentScriptPath });
+
+    const platformScan = await page.evaluate(async () => {
+      return await new Promise<{
+        context: { company: string; role: string; platform: string };
+        fields: { selector: string; label: string }[];
+      }>((resolve) => {
+        window.__hfmContentListener({ type: "HFM_SCAN" }, {}, resolve);
+      });
+    });
+
+    if (platformScan.context.company !== fixture.company) {
+      throw new Error(
+        `${fixture.platform} company context mismatch: ${platformScan.context.company}`,
+      );
+    }
+    if (platformScan.context.role !== fixture.role) {
+      throw new Error(
+        `${fixture.platform} role context mismatch: ${platformScan.context.role}`,
+      );
+    }
+    if (platformScan.context.platform !== fixture.platform) {
+      throw new Error(
+        `${fixture.platform} platform context mismatch: ${platformScan.context.platform}`,
+      );
+    }
+    if (platformScan.fields.length === 0) {
+      throw new Error(`${fixture.platform} fields were not detected`);
+    }
   }
 
   const popupPage = await browser.newPage();
