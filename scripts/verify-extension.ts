@@ -307,8 +307,14 @@ try {
   if (!videoField?.selector.includes('value="video"')) {
     throw new Error("Expected radio field with unique value selector");
   }
+  if (!videoField.options?.some((option) => /video/i.test(option))) {
+    throw new Error("Expected radio field options to include the choice label");
+  }
   if (!confirmField) {
     throw new Error("Expected checkbox field was not detected");
+  }
+  if (!confirmField.options?.some((option) => /accurate/i.test(option))) {
+    throw new Error("Expected checkbox field options to include the label");
   }
 
   await page.evaluate(async (selector) => {

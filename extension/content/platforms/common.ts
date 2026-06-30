@@ -85,13 +85,22 @@ function labelFor(element: HTMLElement) {
 }
 
 function selectOptions(element: HTMLElement) {
-  if (!(element instanceof HTMLSelectElement)) {
-    return undefined;
+  if (element instanceof HTMLSelectElement) {
+    return Array.from(element.options)
+      .map((option) => option.textContent?.trim() || option.value.trim())
+      .filter(Boolean);
   }
 
-  return Array.from(element.options)
-    .map((option) => option.textContent?.trim() || option.value.trim())
-    .filter(Boolean);
+  if (
+    element instanceof HTMLInputElement &&
+    ["checkbox", "radio"].includes(element.type)
+  ) {
+    return Array.from(
+      new Set([element.value.trim(), labelFor(element).trim()].filter(Boolean)),
+    );
+  }
+
+  return undefined;
 }
 
 export function detectFields(): DetectedField[] {
