@@ -116,6 +116,25 @@ if (!salary.answer.includes("12–18 LPA")) {
   throw new Error("Salary guardrail did not return 12–18 LPA");
 }
 
+const specificityCompany = `Runtime Specificity ${suffix}`;
+const specificityRole = "Forward Deployed AI Engineer";
+const specificity = await api<{ answer: string; category: string }>(
+  "/api/answer",
+  postJson({
+    question: "Why are you looking for a new role?",
+    company: specificityCompany,
+    role: specificityRole,
+    jdText: "Customer-facing AI engineering with TypeScript and RAG.",
+  }),
+);
+if (
+  specificity.category !== "why_looking" ||
+  !specificity.answer.includes(specificityCompany) ||
+  !specificity.answer.includes(specificityRole)
+) {
+  throw new Error("Specificity guardrail did not include company and role");
+}
+
 const batchAnswers = await api<{
   answers: { id: string; answer: string; category: string }[];
 }>(
