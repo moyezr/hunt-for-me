@@ -12,6 +12,7 @@ import {
   enforceSalaryGuardrail,
   extractKeywords,
   extractProfileSkillKeywords,
+  fallbackAnswer,
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
@@ -44,6 +45,21 @@ test("classifies profile fields", () => {
   assert.equal(
     classifyQuestion("Highest education qualification"),
     "education",
+  );
+});
+
+test("classifies narrative motivation questions", () => {
+  assert.equal(
+    classifyQuestion("Why are you looking for a new role?"),
+    "why_looking",
+  );
+  assert.equal(
+    classifyQuestion("Reason for leaving your last role"),
+    "why_leaving",
+  );
+  assert.equal(
+    classifyQuestion("Where do you see yourself in five years?"),
+    "career_goal",
   );
 });
 
@@ -109,6 +125,18 @@ test("keeps deterministic and salary answers concise", () => {
     }),
     "My expected compensation is 12–18 LPA.",
   );
+});
+
+test("answers why-looking prompts from profile narrative", () => {
+  const answer = fallbackAnswer({
+    question: "Why are you looking for a new role?",
+    company: "SignalWorks AI",
+    role: "Applied AI Engineer",
+    jdText: "Need Next.js and TypeScript.",
+  });
+
+  assert.match(answer, /more ownership/);
+  assert.match(answer, /closer contact with customers/);
 });
 
 test("extracts useful JD keywords", () => {

@@ -103,6 +103,18 @@ export function classifyQuestion(question: string) {
     return "why_company";
   }
 
+  if (
+    text.includes("why are you looking") ||
+    text.includes("why you're looking") ||
+    text.includes("why you are looking") ||
+    text.includes("reason for looking") ||
+    text.includes("looking for a change") ||
+    text.includes("job change") ||
+    text.includes("role change")
+  ) {
+    return "why_looking";
+  }
+
   if (text.includes("leave") || text.includes("leaving")) {
     return "why_leaving";
   }
@@ -218,7 +230,7 @@ export function deterministicProfileAnswer(category: string) {
   }
 }
 
-function fallbackAnswer(input: AnswerRequest) {
+export function fallbackAnswer(input: AnswerRequest) {
   const profile = getProfile();
   const category = classifyQuestion(input.question);
 
@@ -228,6 +240,10 @@ function fallbackAnswer(input: AnswerRequest) {
 
   if (category === "why_leaving") {
     return profile.narratives.whyLeftPreviousCompany;
+  }
+
+  if (category === "why_looking") {
+    return profile.narratives.whyLooking;
   }
 
   if (category === "career_goal") {
