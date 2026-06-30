@@ -167,6 +167,19 @@ export function classifyQuestion(question: string) {
   }
 
   if (
+    text.includes("i confirm") ||
+    text.includes("i certify") ||
+    text.includes("i agree") ||
+    text.includes("i authorize") ||
+    text.includes("i consent") ||
+    text.includes("terms and conditions") ||
+    text.includes("details are accurate") ||
+    text.includes("information is accurate")
+  ) {
+    return "confirmation";
+  }
+
+  if (
     text.includes("why") &&
     (text.includes("company") || text.includes("join"))
   ) {
@@ -293,6 +306,8 @@ export function deterministicProfileAnswer(category: string) {
         )
         .filter(Boolean)
         .join("; ");
+    case "confirmation":
+      return "Yes";
     case "notice_period":
       return profile.noticePeriod;
     default:
@@ -372,6 +387,7 @@ export function enforceAnswerSpecificity({
       "website",
       "location",
       "education",
+      "confirmation",
       "notice_period",
       "salary",
     ].includes(category)

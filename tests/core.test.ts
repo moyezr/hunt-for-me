@@ -57,6 +57,17 @@ test("classifies profile fields", () => {
   );
 });
 
+test("classifies confirmation fields", () => {
+  assert.equal(
+    classifyQuestion("I confirm these details are accurate"),
+    "confirmation",
+  );
+  assert.equal(
+    classifyQuestion("I agree to the terms and conditions"),
+    "confirmation",
+  );
+});
+
 test("classifies narrative motivation questions", () => {
   assert.equal(
     classifyQuestion("Why are you looking for a new role?"),
@@ -82,6 +93,7 @@ test("resolves deterministic profile answers without AI", () => {
     deterministicProfileAnswer("education") ?? "",
     /Software engineering and applied AI experience/,
   );
+  assert.equal(deterministicProfileAnswer("confirmation"), "Yes");
 });
 
 test("recommends tailored resumes by role", () => {
@@ -156,6 +168,15 @@ test("keeps deterministic and salary answers concise", () => {
       category: "salary",
     }),
     "My expected compensation is 12–18 LPA.",
+  );
+  assert.equal(
+    enforceAnswerSpecificity({
+      answer: "Yes",
+      company: "SignalWorks AI",
+      role: "Applied AI Engineer",
+      category: "confirmation",
+    }),
+    "Yes",
   );
 });
 
