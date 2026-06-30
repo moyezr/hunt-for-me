@@ -84,6 +84,21 @@ const fixtureHtml = `<!doctype html>
             <option value="onsite">On-site</option>
           </select>
         </label>
+        <fieldset>
+          <legend>Preferred interview format</legend>
+          <label>
+            <input name="interview-format" type="radio" value="phone" />
+            Phone
+          </label>
+          <label>
+            <input name="interview-format" type="radio" value="video" />
+            Video
+          </label>
+        </fieldset>
+        <label>
+          <input id="confirm-accuracy" type="checkbox" />
+          I confirm these details are accurate
+        </label>
         <label>
           Why do you want to join SignalWorks AI?
           <textarea id="why-company"></textarea>
@@ -198,7 +213,12 @@ try {
   const scan = await page.evaluate(async () => {
     return await new Promise<{
       context: { company: string; role: string; platform: string };
-      fields: { selector: string; label: string; options?: string[] }[];
+      fields: {
+        selector: string;
+        label: string;
+        type: string;
+        options?: string[];
+      }[];
     }>((resolve) => {
       window.__hfmContentListener({ type: "HFM_SCAN" }, {}, resolve);
     });
@@ -231,6 +251,12 @@ try {
   const workModeField = scan.fields.find((field) =>
     field.label.includes("Preferred work mode"),
   );
+  const videoField = scan.fields.find(
+    (field) => field.type === "radio" && field.label.includes("Video"),
+  );
+  const confirmField = scan.fields.find((field) =>
+    field.label.includes("I confirm these details are accurate"),
+  );
   if (!whyField) {
     throw new Error("Expected application question field was not detected");
   }
@@ -245,6 +271,12 @@ try {
   }
   if (!workModeField?.options?.includes("Remote")) {
     throw new Error("Expected select options were not detected");
+  }
+  if (!videoField?.selector.includes('value="video"')) {
+    throw new Error("Expected radio field with unique value selector");
+  }
+  if (!confirmField) {
+    throw new Error("Expected checkbox field was not detected");
   }
 
   await page.evaluate(async (selector) => {
@@ -292,9 +324,39 @@ try {
     });
   }, workModeField.selector);
 
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Video" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, videoField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Yes" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, confirmField.selector);
+
   const filled = await page.locator("#why-company").inputValue();
   const fullName = await page.locator("#full-name").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
+  const videoChecked = await page
+    .locator('input[name="interview-format"][value="video"]')
+    .isChecked();
+  const confirmChecked = await page.locator("#confirm-accuracy").isChecked();
   const events = await page.evaluate(() => window.hfmEvents);
   const submitted = await page.evaluate(() => window.hfmSubmitted);
 
@@ -306,6 +368,12 @@ try {
   }
   if (workMode !== "remote") {
     throw new Error("Select field was not matched and filled by option text");
+  }
+  if (!videoChecked) {
+    throw new Error("Radio field was not checked by matching answer text");
+  }
+  if (!confirmChecked) {
+    throw new Error("Checkbox field was not checked by affirmative answer");
   }
   if (submitted) {
     throw new Error("Extension submitted the application form while filling");

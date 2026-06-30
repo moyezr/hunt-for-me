@@ -16,6 +16,19 @@ function selectorFor(element: Element, index: number) {
     return `#${CSS.escape(element.id)}`;
   }
 
+  if (
+    element instanceof HTMLInputElement &&
+    ["checkbox", "radio"].includes(element.type)
+  ) {
+    const name = element.getAttribute("name");
+    const value = element.getAttribute("value");
+    if (name && value) {
+      return `input[name="${CSS.escape(name)}"][value="${CSS.escape(value)}"]`;
+    }
+
+    return `[data-hfm-field="${index}"]`;
+  }
+
   const name = element.getAttribute("name");
   if (name) {
     return `${element.tagName.toLowerCase()}[name="${CSS.escape(name)}"]`;
@@ -94,6 +107,8 @@ export function detectFields(): DetectedField[] {
         "input[type='url']",
         "input[type='number']",
         "input[type='search']",
+        "input[type='checkbox']",
+        "input[type='radio']",
       ].join(", "),
     ),
   ).filter((element) => {
@@ -172,6 +187,33 @@ export function fillField(selector: string, value: string) {
       element.value = option.value;
     } else {
       return false;
+    }
+  } else if (
+    element instanceof HTMLInputElement &&
+    ["checkbox", "radio"].includes(element.type)
+  ) {
+    const normalizedValue = value.trim().toLowerCase();
+    const label = labelFor(element).toLowerCase();
+    const shouldCheck =
+      ["yes", "true", "checked", "agree", "accepted"].includes(
+        normalizedValue,
+      ) ||
+      element.value.toLowerCase() === normalizedValue ||
+      label.includes(normalizedValue) ||
+      normalizedValue.includes(label);
+
+    if (!shouldCheck) {
+      return false;
+    }
+
+    const descriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "checked",
+    );
+    if (descriptor?.set) {
+      descriptor.set.call(element, true);
+    } else {
+      element.checked = true;
     }
   } else {
     const prototype = Object.getPrototypeOf(element);
