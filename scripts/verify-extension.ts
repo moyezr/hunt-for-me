@@ -474,6 +474,14 @@ try {
   }[] = [];
   let popupFillAnswers: { selector: string; answer: string }[] = [];
   let popupAnswerQuestionCount = 0;
+  const detectedPopupContext = {
+    company: "SignalWorks AI",
+    role: "Applied AI Engineer",
+    url: "https://www.naukri.com/job-listings-applied-ai",
+    platform: "naukri",
+    jdText: "Need Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
+  };
+  let popupScanContext = detectedPopupContext;
   await popupPage.exposeFunction("hfmMockSendMessage", (message: unknown) => {
     const typedMessage = message as {
       type: string;
@@ -482,13 +490,7 @@ try {
 
     if (typedMessage.type === "HFM_SCAN") {
       return {
-        context: {
-          company: "SignalWorks AI",
-          role: "Applied AI Engineer",
-          url: "https://www.naukri.com/job-listings-applied-ai",
-          platform: "naukri",
-          jdText: "Need Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
-        },
+        context: popupScanContext,
         fields: popupScanFields,
       };
     }
@@ -627,6 +629,24 @@ try {
   if (!popupApiRequests.includes("/api/health")) {
     throw new Error("Popup did not call the health endpoint");
   }
+
+  popupScanContext = {
+    ...detectedPopupContext,
+    company: "Unknown company",
+  };
+  await popupPage.locator("#scanButton").click();
+  await popupPage
+    .locator("#status")
+    .getByText("Detect the company and role before generating answers")
+    .waitFor();
+  if (popupApiRequests.includes("/api/answers")) {
+    throw new Error("Popup requested answers with placeholder company context");
+  }
+  if (!(await popupPage.locator("#saveJobButton").isDisabled())) {
+    throw new Error("Save job button was enabled with placeholder context");
+  }
+
+  popupScanContext = detectedPopupContext;
   await popupPage.locator("#scanButton").click();
   await popupPage.locator("textarea").first().waitFor();
   if (!(await popupPage.locator("#applyButton").isDisabled())) {

@@ -25,6 +25,15 @@ const maxAnswerFields = 20;
 let drafts: DraftAnswer[] = [];
 let context: PageContext | null = null;
 
+function hasUsableContext(value: PageContext | null): value is PageContext {
+  return Boolean(
+    value?.company.trim() &&
+      value.company !== "Unknown company" &&
+      value.role.trim() &&
+      value.role !== "Open role",
+  );
+}
+
 function setStatus(message: string) {
   if (statusElement) {
     statusElement.textContent = message;
@@ -110,13 +119,11 @@ function updateContextUi() {
   }
 
   if (saveJobButton) {
-    saveJobButton.disabled =
-      !context || context.company === "Unknown company" || !context.role;
+    saveJobButton.disabled = !hasUsableContext(context);
   }
 
   if (markAppliedButton) {
-    markAppliedButton.disabled =
-      !context || context.company === "Unknown company" || !context.role;
+    markAppliedButton.disabled = !hasUsableContext(context);
   }
 }
 
@@ -162,8 +169,9 @@ function questionForField(field: DetectedField) {
 }
 
 async function getAnswers(fields: DetectedField[]) {
-  if (!context) {
-    throw new Error("Missing page context");
+  const activeContext = context;
+  if (!hasUsableContext(activeContext)) {
+    throw new Error("Detect the company and role before generating answers");
   }
 
   const response = await fetch(`${apiBase}/api/answers`, {
@@ -174,10 +182,10 @@ async function getAnswers(fields: DetectedField[]) {
         id: field.id,
         question: questionForField(field),
       })),
-      company: context.company,
-      role: context.role,
-      jdText: context.jdText,
-      jobUrl: context.url,
+      company: activeContext.company,
+      role: activeContext.role,
+      jdText: activeContext.jdText,
+      jobUrl: activeContext.url,
     }),
   });
 
@@ -221,19 +229,20 @@ function renderLoadingDrafts(fields: DetectedField[]) {
 }
 
 async function saveCurrentJob(status: "discovered" | "applied") {
-  if (!context) {
-    throw new Error("Scan the page before saving the job");
+  const activeContext = context;
+  if (!hasUsableContext(activeContext)) {
+    throw new Error("Detect the company and role before saving the job");
   }
 
   const response = await fetch(`${apiBase}/api/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: context.role,
-      company: context.company,
-      url: context.url,
-      platform: context.platform,
-      jdText: context.jdText,
+      title: activeContext.role,
+      company: activeContext.company,
+      url: activeContext.url,
+      platform: activeContext.platform,
+      jdText: activeContext.jdText,
       status,
     }),
   });
@@ -261,6 +270,15 @@ scanButton?.addEventListener("click", async () => {
     const fields = scan.fields as DetectedField[];
 
     updateContextUi();
+    if (!hasUsableContext(context)) {
+      drafts = [];
+      renderDrafts();
+      if (resumeElement) {
+        resumeElement.hidden = true;
+      }
+      throw new Error("Detect the company and role before generating answers");
+    }
+
     await recommendResume();
 
     const answerFields = fields.slice(0, maxAnswerFields);
