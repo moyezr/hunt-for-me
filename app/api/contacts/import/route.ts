@@ -1,3 +1,4 @@
+import { normalizeContactImportRow } from "@/lib/contact-import";
 import { parseCsvObjects } from "@/lib/csv";
 import { createContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
@@ -20,24 +21,21 @@ export async function POST(request: Request) {
     const skipped = [];
 
     for (const row of rows) {
-      const name = row.name;
-      const title = row.title;
-      const company = row.company;
-
-      if (!name || !title || !company) {
+      const contact = normalizeContactImportRow(row);
+      if (!contact) {
         skipped.push(row);
         continue;
       }
 
       imported.push(
         createContact({
-          name,
-          title,
-          company,
-          platform: row.platform || "linkedin",
-          profileUrl: row.profile_url || row.profile || "",
+          name: contact.name,
+          title: contact.title,
+          company: contact.company,
+          platform: contact.platform,
+          profileUrl: contact.profileUrl,
           status: "new",
-          notes: row.notes || "",
+          notes: contact.notes,
         }),
       );
     }

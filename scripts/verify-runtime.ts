@@ -255,7 +255,12 @@ const csv = [
   `Runtime Founder ${suffix},Founder,Runtime Outreach ${suffix},linkedin,https://linkedin.com/in/runtime-${suffix},building agentic hiring workflows`,
 ].join("\n");
 const imported = await api<{
-  contacts: { id: string; status: string; messageHistory: unknown[] }[];
+  contacts: {
+    id: string;
+    status: string;
+    messageHistory: unknown[];
+    notes: string;
+  }[];
 }>("/api/contacts/import", postJson({ csv }));
 const contact = imported.contacts[0];
 if (!contact.id.startsWith("con_") || contact.status !== "new") {
@@ -269,6 +274,26 @@ if (duplicateImport.contacts[0].id !== contact.id) {
   throw new Error(
     "Duplicate contact import did not reuse the existing contact",
   );
+}
+
+const aliasCsv = [
+  "full name,role,organization,linkedin url,company context",
+  `Runtime Alias ${suffix},Founder,Runtime Alias ${suffix},https://linkedin.com/in/runtime-alias-${suffix},hiring agent builders`,
+].join("\n");
+const aliasImport = await api<{
+  contacts: {
+    id: string;
+    platform: string;
+    profileUrl: string;
+    notes: string;
+  }[];
+}>("/api/contacts/import", postJson({ csv: aliasCsv }));
+if (
+  aliasImport.contacts[0].platform !== "linkedin" ||
+  !aliasImport.contacts[0].profileUrl.includes("runtime-alias") ||
+  aliasImport.contacts[0].notes !== "hiring agent builders"
+) {
+  throw new Error("Contact import aliases did not preserve context");
 }
 
 const drafted = await api<{

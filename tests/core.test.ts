@@ -19,6 +19,7 @@ import {
   getOpenRouterModel,
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
+import { normalizeContactImportRow } from "@/lib/contact-import";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
 import { getDailyPlan } from "@/lib/daily-plan";
 import { countSentContactsForDay } from "@/lib/db";
@@ -405,6 +406,26 @@ test("normalizes contact identity matching inputs", () => {
   };
 
   assert.equal(contactIdentityKey(first), contactIdentityKey(second));
+});
+
+test("normalizes flexible contact import headers", () => {
+  const contact = normalizeContactImportRow({
+    full_name: "Asha Rao",
+    role: "Founder",
+    organization: "SignalWorks",
+    linkedin_url: "https://linkedin.com/in/asha",
+    company_context: "hiring applied AI engineers",
+  });
+
+  assert.deepEqual(contact, {
+    name: "Asha Rao",
+    title: "Founder",
+    company: "SignalWorks",
+    platform: "linkedin",
+    profileUrl: "https://linkedin.com/in/asha",
+    notes: "hiring applied AI engineers",
+  });
+  assert.equal(normalizeContactImportRow({ name: "Missing Title" }), null);
 });
 
 test("builds a daily job hunt operating plan", () => {
