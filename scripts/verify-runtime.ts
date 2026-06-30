@@ -253,6 +253,9 @@ if (
 if (/12\s*[–-]\s*18\s*LPA/i.test(drafted.message.body)) {
   throw new Error("Outreach message mentioned salary");
 }
+if (!drafted.message.body.includes("building agentic hiring workflows")) {
+  throw new Error("Outreach message did not include imported company context");
+}
 
 await apiFailure(
   `/api/contacts/${contact.id}/message`,
@@ -262,6 +265,7 @@ await apiFailure(
 
 const duplicateDraft = await api<{
   contact: { id: string; status: string; messageHistory: unknown[] };
+  message: { body: string };
 }>(
   "/api/message",
   postJson({
@@ -278,6 +282,11 @@ if (duplicateDraft.contact.id !== contact.id) {
   throw new Error(
     "Duplicate outreach draft did not reuse the existing contact",
   );
+}
+if (
+  !duplicateDraft.message.body.includes("building agentic hiring workflows")
+) {
+  throw new Error("Duplicate outreach draft did not include company context");
 }
 
 const batchDrafts = await api<{
@@ -321,6 +330,12 @@ if (
   )
 ) {
   throw new Error("Batch outreach draft mentioned salary");
+}
+if (
+  !batchDrafts.drafts[0].message.body.includes("expanding hiring automation") ||
+  !batchDrafts.drafts[1].message.body.includes("hiring AI engineers")
+) {
+  throw new Error("Batch outreach drafts did not include company context");
 }
 
 const templates = await api<{
