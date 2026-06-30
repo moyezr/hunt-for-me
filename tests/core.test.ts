@@ -39,6 +39,10 @@ test("classifies profile fields", () => {
   assert.equal(classifyQuestion("Full name"), "full_name");
   assert.equal(classifyQuestion("Email address"), "email");
   assert.equal(classifyQuestion("LinkedIn profile"), "linkedin");
+  assert.equal(
+    classifyQuestion("Highest education qualification"),
+    "education",
+  );
 });
 
 test("resolves deterministic profile answers without AI", () => {
@@ -47,6 +51,10 @@ test("resolves deterministic profile answers without AI", () => {
     "moyezrabbani.work@gmail.com",
   );
   assert.equal(deterministicProfileAnswer("full_name"), "Moyez Rabbani");
+  assert.match(
+    deterministicProfileAnswer("education") ?? "",
+    /Software engineering and applied AI experience/,
+  );
 });
 
 test("recommends tailored resumes by role", () => {
@@ -132,8 +140,11 @@ test("profile is present and not empty", () => {
   const profilePath = path.join(process.cwd(), "data", "profile.json");
   const profile = JSON.parse(fs.readFileSync(profilePath, "utf8")) as {
     name?: string;
+    education?: unknown[];
   };
   assert.equal(profile.name, "Moyez Rabbani");
+  assert.ok(Array.isArray(profile.education));
+  assert.ok(profile.education.length > 0);
 });
 
 test("outreach templates are configurable by channel", () => {

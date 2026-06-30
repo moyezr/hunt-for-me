@@ -94,6 +94,14 @@ export type CandidateProfile = {
     end: string;
     highlights: string[];
   }[];
+  education: {
+    institution: string;
+    degree: string;
+    field: string;
+    start?: string;
+    end?: string;
+    notes?: string;
+  }[];
   projects: string[];
   preferredRoles: string[];
   locationPreferences: string[];

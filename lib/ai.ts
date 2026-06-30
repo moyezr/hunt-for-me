@@ -79,6 +79,16 @@ export function classifyQuestion(question: string) {
   }
 
   if (
+    text.includes("education") ||
+    text.includes("qualification") ||
+    text.includes("degree") ||
+    text.includes("college") ||
+    text.includes("university")
+  ) {
+    return "education";
+  }
+
+  if (
     text.includes("salary") ||
     text.includes("ctc") ||
     text.includes("compensation")
@@ -187,6 +197,20 @@ export function deterministicProfileAnswer(category: string) {
       return profile.contact.website;
     case "location":
       return profile.locationPreferences.join(", ");
+    case "education":
+      return profile.education
+        .map((item) =>
+          [item.degree, item.field, item.institution]
+            .filter(
+              (part) =>
+                part &&
+                part !== "Not specified in current profile" &&
+                !part.startsWith("Education details were not present"),
+            )
+            .join(", "),
+        )
+        .filter(Boolean)
+        .join("; ");
     case "notice_period":
       return profile.noticePeriod;
     default:

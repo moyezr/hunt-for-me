@@ -64,6 +64,14 @@
       ]
     }
   ],
+  "education": [
+    {
+      "institution": "Not specified in current profile",
+      "degree": "Not specified in current profile",
+      "field": "Software engineering and applied AI experience from shipped production work",
+      "notes": "Education details were not present in the repository resumes/profile yet. Update this entry when the exact institution and degree are available."
+    }
+  ],
   "projects": [
     "OneSpec - AI phone answering and scheduling for home service businesses.",
     "Nemo Cares - voice-first caregiving and medication reminder platform.",
