@@ -310,15 +310,21 @@ approveCheckbox?.addEventListener("change", updateApplyState);
 applyButton?.addEventListener("click", async () => {
   try {
     const tab = await currentTab();
-    await chrome.tabs.sendMessage(tab.id ?? 0, {
+    const result = (await chrome.tabs.sendMessage(tab.id ?? 0, {
       type: "HFM_FILL",
       answers: drafts.map((draft) => ({
         selector: draft.field.selector,
         answer: draft.answer,
       })),
-    });
+    })) as {
+      results?: { selector: string; filled: boolean }[];
+    };
+    const failedCount =
+      result.results?.filter((item) => !item.filled).length ?? 0;
     setStatus(
-      "Filled approved answers. Review the page before submitting manually.",
+      failedCount > 0
+        ? `Filled approved answers, but ${failedCount} field(s) need manual review.`
+        : "Filled approved answers. Review the page before submitting manually.",
     );
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Fill failed");

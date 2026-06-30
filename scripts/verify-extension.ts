@@ -495,7 +495,12 @@ try {
 
     if (typedMessage.type === "HFM_FILL") {
       popupFillAnswers = typedMessage.answers ?? [];
-      return { results: typedMessage.answers?.map(() => ({ filled: true })) };
+      return {
+        results: typedMessage.answers?.map((answer, index) => ({
+          selector: answer.selector,
+          filled: index !== 1,
+        })),
+      };
     }
 
     return {};
@@ -727,6 +732,10 @@ try {
       "Popup did not send approved answers to the content script",
     );
   }
+  await popupPage
+    .locator("#status")
+    .getByText("1 field(s) need manual review")
+    .waitFor();
 
   console.log("Extension content and popup verification passed.");
 } finally {
