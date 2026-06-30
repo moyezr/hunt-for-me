@@ -428,6 +428,12 @@ try {
     };
   });
   await popupPage.addScriptTag({ path: popupScriptPath });
+  await popupPage.waitForFunction(() =>
+    document.querySelector("#healthDot")?.classList.contains("ok"),
+  );
+  if (!popupApiRequests.includes("/api/health")) {
+    throw new Error("Popup did not call the health endpoint");
+  }
   await popupPage.locator("#scanButton").click();
   await popupPage.locator("textarea").first().waitFor();
   if (!(await popupPage.locator("#applyButton").isDisabled())) {
