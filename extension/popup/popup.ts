@@ -20,6 +20,7 @@ const pageContextElement = document.querySelector<HTMLElement>("#pageContext");
 const resumeElement = document.querySelector<HTMLElement>(
   "#resumeRecommendation",
 );
+const maxAnswerFields = 20;
 
 let drafts: DraftAnswer[] = [];
 let context: PageContext | null = null;
@@ -262,7 +263,7 @@ scanButton?.addEventListener("click", async () => {
     updateContextUi();
     await recommendResume();
 
-    const answerFields = fields.slice(0, 12);
+    const answerFields = fields.slice(0, maxAnswerFields);
     setStatus(`Generating answers for ${answerFields.length} fields...`);
     renderLoadingDrafts(answerFields);
     drafts = await getAnswers(answerFields);

@@ -185,6 +185,38 @@ const platformFixtures = [
   },
 ];
 
+const popupScanFields = [
+  {
+    id: "field_name",
+    label: "Full name",
+    selector: "#full-name",
+    tagName: "input",
+    type: "text",
+  },
+  {
+    id: "field_mode",
+    label: "Preferred work mode",
+    selector: "#work-mode",
+    tagName: "select",
+    type: "select",
+    options: ["Select one", "Remote", "Hybrid"],
+  },
+  {
+    id: "field_why",
+    label: "Why do you want to join SignalWorks AI?",
+    selector: "#why-company",
+    tagName: "textarea",
+    type: "textarea",
+  },
+  ...Array.from({ length: 21 }, (_, index) => ({
+    id: `field_extra_${index}`,
+    label: `Screening question ${index + 1}`,
+    selector: `#screening-${index}`,
+    tagName: "input",
+    type: "text",
+  })),
+];
+
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -435,6 +467,7 @@ try {
     status: string;
   }[] = [];
   let popupFillAnswers: { selector: string; answer: string }[] = [];
+  let popupAnswerQuestionCount = 0;
   await popupPage.exposeFunction("hfmMockSendMessage", (message: unknown) => {
     const typedMessage = message as {
       type: string;
@@ -450,30 +483,7 @@ try {
           platform: "naukri",
           jdText: "Need Next.js, TypeScript, RAG, Redis, Docker, and Azure.",
         },
-        fields: [
-          {
-            id: "field_name",
-            label: "Full name",
-            selector: "#full-name",
-            tagName: "input",
-            type: "text",
-          },
-          {
-            id: "field_mode",
-            label: "Preferred work mode",
-            selector: "#work-mode",
-            tagName: "select",
-            type: "select",
-            options: ["Select one", "Remote", "Hybrid"],
-          },
-          {
-            id: "field_why",
-            label: "Why do you want to join SignalWorks AI?",
-            selector: "#why-company",
-            tagName: "textarea",
-            type: "textarea",
-          },
-        ],
+        fields: popupScanFields,
       };
     }
 
@@ -522,6 +532,7 @@ try {
       const requestBody = route.request().postDataJSON() as {
         questions: { id: string; question: string }[];
       };
+      popupAnswerQuestionCount = requestBody.questions.length;
       await new Promise((resolve) => setTimeout(resolve, 100));
       await route.fulfill({
         contentType: "application/json",
@@ -623,6 +634,11 @@ try {
   if (popupApiRequests.includes("/api/answer")) {
     throw new Error("Popup called single-answer endpoint during batch scan");
   }
+  if (popupAnswerQuestionCount !== 20) {
+    throw new Error(
+      `Popup requested ${popupAnswerQuestionCount} answers instead of 20`,
+    );
+  }
 
   if (await popupPage.locator("#saveJobButton").isDisabled()) {
     throw new Error("Save job button was not enabled after scanning context");
@@ -667,7 +683,7 @@ try {
       textareas.map((textarea) => (textarea as HTMLTextAreaElement).value),
     );
   if (
-    popupAnswers.length !== 3 ||
+    popupAnswers.length !== 20 ||
     !popupAnswers.includes("Moyez Rabbani") ||
     !popupAnswers.includes("Remote")
   ) {
@@ -694,7 +710,7 @@ try {
   await popupPage.locator("#approveCheckbox").check();
   await popupPage.locator("#applyButton").click();
   if (
-    popupFillAnswers.length !== 3 ||
+    popupFillAnswers.length !== 20 ||
     !popupFillAnswers.some((answer) => answer.answer === "Moyez Rabbani")
   ) {
     throw new Error(
