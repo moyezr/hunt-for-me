@@ -24,6 +24,25 @@ function readPrompt(name: string) {
   return fs.readFileSync(path.join(process.cwd(), "prompts", name), "utf8");
 }
 
+export function getApplicationPrompt(category: string) {
+  const base = readPrompt("application-answer.md");
+  const safeCategory = category.replace(/[^a-z0-9_-]/gi, "");
+  const categoryPath = path.join(
+    process.cwd(),
+    "prompts",
+    `application-${safeCategory}.md`,
+  );
+
+  if (!safeCategory || !fs.existsSync(categoryPath)) {
+    return base;
+  }
+
+  return `${base}\n\nCategory-specific instructions:\n${fs.readFileSync(
+    categoryPath,
+    "utf8",
+  )}`;
+}
+
 export function getOpenRouterModel() {
   const configured = process.env.OPENROUTER_MODEL ?? "gpt-5.5-min";
   return modelAliases[configured] ?? configured;
@@ -582,7 +601,7 @@ export async function generateAnswer(
   }
 
   const profile = getProfile();
-  const prompt = readPrompt("application-answer.md");
+  const prompt = getApplicationPrompt(category);
   const userPrompt = JSON.stringify(
     {
       question: input.question,

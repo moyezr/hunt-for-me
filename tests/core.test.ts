@@ -15,6 +15,7 @@ import {
   extractProfileSkillKeywords,
   fallbackAnswer,
   generateJobFitScore,
+  getApplicationPrompt,
   getOpenRouterModel,
 } from "@/lib/ai";
 import { contactIdentityKey } from "@/lib/contact-identity";
@@ -95,6 +96,15 @@ test("normalizes salary answers to the required phrase", () => {
     enforceSalaryGuardrail("Expected CTC is 12-18 LPA.", "salary"),
     "Expected CTC is 12–18 LPA.",
   );
+});
+
+test("loads category-specific application prompt instructions", () => {
+  const salaryPrompt = getApplicationPrompt("salary");
+  const unknownPrompt = getApplicationPrompt("../unknown");
+
+  assert.match(salaryPrompt, /Category-specific instructions/);
+  assert.match(salaryPrompt, /12–18 LPA/);
+  assert.doesNotMatch(unknownPrompt, /Category-specific instructions/);
 });
 
 test("resolves configured OpenRouter model alias", () => {
