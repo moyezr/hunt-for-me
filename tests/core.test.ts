@@ -109,7 +109,7 @@ test("resolves deterministic profile answers without AI", () => {
   assert.equal(deterministicProfileAnswer("full_name"), "Moyez Rabbani");
   assert.match(
     deterministicProfileAnswer("education") ?? "",
-    /Software engineering and applied AI experience/,
+    /Bachelor of Technology, Computer Science and Engineering, Techno India University/,
   );
   assert.equal(deterministicProfileAnswer("confirmation"), "Yes");
 });
@@ -375,6 +375,10 @@ test("profile is present and not empty", () => {
   assert.equal(profile.name, "Moyez Rabbani");
   assert.ok(Array.isArray(profile.education));
   assert.ok(profile.education.length > 0);
+  assert.doesNotMatch(
+    JSON.stringify(profile.education),
+    /Not specified in current profile/,
+  );
 });
 
 test("outreach templates are configurable by channel", () => {

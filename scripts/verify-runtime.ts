@@ -116,6 +116,21 @@ if (!salary.answer.includes("12–18 LPA")) {
   throw new Error("Salary guardrail did not return 12–18 LPA");
 }
 
+const education = await api<{ answer: string }>(
+  "/api/answer",
+  postJson({
+    question: "Highest education qualification",
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+);
+if (
+  !education.answer.includes("Bachelor of Technology") ||
+  !education.answer.includes("Techno India University")
+) {
+  throw new Error("Education answer did not use the resume-backed profile");
+}
+
 const specificityCompany = `Runtime Specificity ${suffix}`;
 const specificityRole = "Forward Deployed AI Engineer";
 const specificity = await api<{ answer: string; category: string }>(
@@ -178,7 +193,15 @@ const answerCacheJob = answerCacheJobs.jobs.find(
     job.company === `Runtime Smoke ${suffix}` &&
     job.title === "Applied AI Engineer",
 );
-if (!answerCacheJob || Object.keys(answerCacheJob.answers).length !== 4) {
+const savedRuntimeAnswers = answerCacheJob?.answers ?? {};
+if (
+  !savedRuntimeAnswers["Full name"] ||
+  !savedRuntimeAnswers["Expected CTC"] ||
+  !savedRuntimeAnswers[
+    "Preferred work mode\nOptions: Select one, Remote, Hybrid"
+  ] ||
+  !savedRuntimeAnswers["Preferred interview format\nOptions: Phone, Video"]
+) {
   throw new Error("Batch answers were not saved to the job answer cache");
 }
 

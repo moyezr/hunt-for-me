@@ -66,10 +66,12 @@
   ],
   "education": [
     {
-      "institution": "Not specified in current profile",
-      "degree": "Not specified in current profile",
-      "field": "Software engineering and applied AI experience from shipped production work",
-      "notes": "Education details were not present in the repository resumes/profile yet. Update this entry when the exact institution and degree are available."
+      "institution": "Techno India University",
+      "degree": "Bachelor of Technology",
+      "field": "Computer Science and Engineering",
+      "start": "2022",
+      "end": "2026",
+      "notes": "Undergraduate"
     }
   ],
   "projects": [
