@@ -65,4 +65,6 @@ npm run verify:extension
 docker compose up --build
 ```
 
-The container mounts `./data` so the local database and profile stay persistent.
+The image uses the Playwright base image so dashboard scraping has Chromium and
+the required system libraries available inside the container. The container
+mounts `./data` so the local database and profile stay persistent.
