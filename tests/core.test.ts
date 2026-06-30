@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   classifyQuestion,
   deterministicProfileAnswer,
+  enforceAnswerSpecificity,
   enforceKeywordCoverage,
   enforceOutreachSalaryGuardrail,
   enforceSalaryGuardrail,
@@ -73,6 +74,40 @@ test("normalizes salary answers to the required phrase", () => {
   assert.equal(
     enforceSalaryGuardrail("Expected CTC is 12-18 LPA.", "salary"),
     "Expected CTC is 12–18 LPA.",
+  );
+});
+
+test("repairs generic application answers with company and role context", () => {
+  const answer = enforceAnswerSpecificity({
+    answer:
+      "I am looking for stronger ownership, faster shipping cycles, and closer customer contact.",
+    company: "SignalWorks AI",
+    role: "Applied AI Engineer",
+    category: "why_leaving",
+  });
+
+  assert.match(answer, /SignalWorks AI/);
+  assert.match(answer, /Applied AI Engineer/);
+});
+
+test("keeps deterministic and salary answers concise", () => {
+  assert.equal(
+    enforceAnswerSpecificity({
+      answer: "Moyez Rabbani",
+      company: "SignalWorks AI",
+      role: "Applied AI Engineer",
+      category: "full_name",
+    }),
+    "Moyez Rabbani",
+  );
+  assert.equal(
+    enforceAnswerSpecificity({
+      answer: "My expected compensation is 12–18 LPA.",
+      company: "SignalWorks AI",
+      role: "Applied AI Engineer",
+      category: "salary",
+    }),
+    "My expected compensation is 12–18 LPA.",
   );
 });
 

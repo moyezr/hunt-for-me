@@ -265,6 +265,54 @@ export function enforceSalaryGuardrail(answer: string, category: string) {
   return "My expected compensation is 12–18 LPA, depending on role scope and overall fit.";
 }
 
+export function enforceAnswerSpecificity({
+  answer,
+  company,
+  role,
+  category,
+}: {
+  answer: string;
+  company: string;
+  role: string;
+  category: string;
+}) {
+  if (
+    [
+      "full_name",
+      "email",
+      "phone",
+      "linkedin",
+      "github",
+      "website",
+      "location",
+      "education",
+      "notice_period",
+      "salary",
+    ].includes(category)
+  ) {
+    return answer;
+  }
+
+  const lowerAnswer = answer.toLowerCase();
+  const hasCompany = lowerAnswer.includes(company.toLowerCase());
+  const hasRole = lowerAnswer.includes(role.toLowerCase());
+
+  if (hasCompany && hasRole) {
+    return answer;
+  }
+
+  const prefix = `For the ${role} role at ${company},`;
+  if (!hasCompany && !hasRole) {
+    return `${prefix} ${answer.charAt(0).toLowerCase()}${answer.slice(1)}`;
+  }
+
+  if (!hasCompany) {
+    return `${answer} I would bring this specifically to ${company}.`;
+  }
+
+  return `${answer} This is the context I would bring to the ${role} role.`;
+}
+
 export function enforceOutreachSalaryGuardrail(message: string) {
   const salaryPattern =
     /\b(salary|ctc|compensation|lpa|package|pay|expected comp)\b|12\s*[–-]\s*18/i;
@@ -353,7 +401,12 @@ export async function generateAnswer(
 
   if (cachedAnswer) {
     const guardedCachedAnswer = enforceKeywordCoverage(
-      enforceSalaryGuardrail(cachedAnswer, category),
+      enforceAnswerSpecificity({
+        answer: enforceSalaryGuardrail(cachedAnswer, category),
+        company: input.company,
+        role: input.role,
+        category,
+      }),
       input.jdText,
     );
     if (guardedCachedAnswer !== cachedAnswer) {
@@ -405,7 +458,12 @@ export async function generateAnswer(
   answer ??= fallbackAnswer(input);
 
   answer = enforceKeywordCoverage(
-    enforceSalaryGuardrail(answer, category),
+    enforceAnswerSpecificity({
+      answer: enforceSalaryGuardrail(answer, category),
+      company: input.company,
+      role: input.role,
+      category,
+    }),
     input.jdText,
   );
 
