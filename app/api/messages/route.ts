@@ -3,7 +3,7 @@ import { addMessageToContact, createContact, getContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
-import { isOutreachChannel } from "@/lib/validation";
+import { defaultPlatformForChannel, isOutreachChannel } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -85,9 +85,7 @@ export async function POST(request: Request) {
               name,
               title,
               company,
-              platform:
-                input.platform ??
-                (channel.startsWith("linkedin") ? "linkedin" : "twitter"),
+              platform: input.platform ?? defaultPlatformForChannel(channel),
               profileUrl: input.profileUrl ?? "",
               status: "drafted",
               message,

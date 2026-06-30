@@ -3,7 +3,7 @@ import { countSentMessagesToday, createContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
-import { isOutreachChannel } from "@/lib/validation";
+import { defaultPlatformForChannel, isOutreachChannel } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     const channel = body.channel ?? "linkedin_note";
-    const platform = body.platform ?? "linkedin";
+    const platform = body.platform ?? defaultPlatformForChannel(channel);
 
     const markSent =
       body.markSent === true ||

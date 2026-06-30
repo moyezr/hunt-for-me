@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Contact, OutreachMessage } from "@/lib/types";
+import { defaultPlatformForChannel } from "@/lib/validation";
 
 type Draft = {
   contact: Contact;
@@ -220,7 +221,7 @@ export function OutreachBatch({
             company,
             companyContext,
             channel,
-            platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
+            platform: defaultPlatformForChannel(channel),
             profileUrl: queuedContact?.profileUrl ?? "",
           };
       const response = await fetch(endpoint, {
@@ -283,7 +284,7 @@ export function OutreachBatch({
             company: contact.company,
             companyContext: contact.companyContext,
             profileUrl: contact.profileUrl,
-            platform: channel.startsWith("linkedin") ? "linkedin" : "twitter",
+            platform: defaultPlatformForChannel(channel),
           })),
         }),
       });

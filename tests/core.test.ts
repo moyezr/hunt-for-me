@@ -33,6 +33,7 @@ import { recommendResume } from "@/lib/resumes";
 import { scoreJob } from "@/lib/scraper";
 import type { Contact, Job } from "@/lib/types";
 import {
+  defaultPlatformForChannel,
   isContactStatus,
   isJobStatus,
   isOutreachChannel,
@@ -296,6 +297,13 @@ test("validates API status, outreach channel, and scraper platform enums", () =>
   assert.equal(isOutreachChannel("sms"), false);
   assert.equal(isScrapePlatform("wellfound"), true);
   assert.equal(isScrapePlatform("linkedin"), false);
+});
+
+test("maps outreach channels to default contact platforms", () => {
+  assert.equal(defaultPlatformForChannel("linkedin_note"), "linkedin");
+  assert.equal(defaultPlatformForChannel("linkedin_dm"), "linkedin");
+  assert.equal(defaultPlatformForChannel("twitter_dm"), "twitter");
+  assert.equal(defaultPlatformForChannel("email"), "email");
 });
 
 test("removes salary language from outreach messages", () => {

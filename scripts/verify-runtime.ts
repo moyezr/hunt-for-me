@@ -315,7 +315,12 @@ if (
 const batchDrafts = await api<{
   drafts: {
     index: number;
-    contact: { id: string; status: string; messageHistory: unknown[] };
+    contact: {
+      id: string;
+      platform: string;
+      status: string;
+      messageHistory: unknown[];
+    };
     message: { body: string };
   }[];
 }>(
@@ -359,6 +364,32 @@ if (
   !batchDrafts.drafts[1].message.body.includes("hiring AI engineers")
 ) {
   throw new Error("Batch outreach drafts did not include company context");
+}
+
+const emailDrafts = await api<{
+  drafts: {
+    contact: { id: string; platform: string; messageHistory: unknown[] };
+    message: { body: string };
+  }[];
+}>(
+  "/api/messages",
+  postJson({
+    channel: "email",
+    contacts: [
+      {
+        name: `Runtime Email Contact ${suffix}`,
+        title: "Founder",
+        company: `Runtime Email ${suffix}`,
+        companyContext: "building B2B automation",
+      },
+    ],
+  }),
+);
+if (
+  emailDrafts.drafts.length !== 1 ||
+  emailDrafts.drafts[0].contact.platform !== "email"
+) {
+  throw new Error("Email outreach drafts did not default to email platform");
 }
 
 await apiFailure(

@@ -41,6 +41,18 @@ export function isOutreachChannel(
   return typeof value === "string" && outreachChannels.includes(value);
 }
 
+export function defaultPlatformForChannel(channel: OutreachMessage["channel"]) {
+  if (channel.startsWith("linkedin")) {
+    return "linkedin";
+  }
+
+  if (channel === "twitter_dm") {
+    return "twitter";
+  }
+
+  return "email";
+}
+
 export function isScrapePlatform(value: unknown): value is ScrapePlatform {
   return typeof value === "string" && scrapePlatforms.includes(value);
 }
