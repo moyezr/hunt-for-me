@@ -104,6 +104,10 @@ const fixtureHtml = `<!doctype html>
           <textarea id="why-company"></textarea>
         </label>
         <label>
+          Additional cover note
+          <div contenteditable="true" id="cover-note" role="textbox"></div>
+        </label>
+        <label>
           Expected CTC
           <input id="salary" type="text" />
         </label>
@@ -116,7 +120,7 @@ const fixtureHtml = `<!doctype html>
           event.preventDefault();
           window.hfmSubmitted = true;
         });
-        for (const element of document.querySelectorAll("textarea, input, select")) {
+        for (const element of document.querySelectorAll("textarea, input, select, [contenteditable='true']")) {
           element.addEventListener("input", () => window.hfmEvents.push(element.id + ":input"));
           element.addEventListener("change", () => window.hfmEvents.push(element.id + ":change"));
         }
@@ -283,6 +287,9 @@ try {
   const workModeField = scan.fields.find((field) =>
     field.label.includes("Preferred work mode"),
   );
+  const coverNoteField = scan.fields.find((field) =>
+    field.label.includes("Additional cover note"),
+  );
   const interviewField = scan.fields.find(
     (field) =>
       field.type === "radio" &&
@@ -305,6 +312,9 @@ try {
   }
   if (!workModeField?.options?.includes("Remote")) {
     throw new Error("Expected select options were not detected");
+  }
+  if (coverNoteField?.type !== "div") {
+    throw new Error("Expected contenteditable textbox was not detected");
   }
   if (!interviewField?.selector.includes('name="interview-format"')) {
     throw new Error("Expected radio group field with shared name selector");
@@ -372,6 +382,25 @@ try {
       window.__hfmContentListener(
         {
           type: "HFM_FILL",
+          answers: [
+            {
+              selector,
+              answer:
+                "SignalWorks AI matches my production AI systems and customer-facing engineering work.",
+            },
+          ],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, coverNoteField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
           answers: [{ selector, answer: "Video" }],
         },
         {},
@@ -396,6 +425,7 @@ try {
   const filled = await page.locator("#why-company").inputValue();
   const fullName = await page.locator("#full-name").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
+  const coverNote = await page.locator("#cover-note").textContent();
   const videoChecked = await page
     .locator('input[name="interview-format"][value="video"]')
     .isChecked();
@@ -412,6 +442,9 @@ try {
   if (workMode !== "remote") {
     throw new Error("Select field was not matched and filled by option text");
   }
+  if (!coverNote?.includes("SignalWorks AI")) {
+    throw new Error("Contenteditable textbox was not filled");
+  }
   if (!videoChecked) {
     throw new Error("Radio field was not checked by matching answer text");
   }
@@ -424,7 +457,9 @@ try {
 
   if (
     !events.includes("why-company:input") ||
-    !events.includes("why-company:change")
+    !events.includes("why-company:change") ||
+    !events.includes("cover-note:input") ||
+    !events.includes("cover-note:change")
   ) {
     throw new Error("React-compatible input/change events were not dispatched");
   }

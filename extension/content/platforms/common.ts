@@ -152,6 +152,8 @@ export function detectFields(): DetectedField[] {
       [
         "textarea",
         "select",
+        "[contenteditable='true']",
+        "[role='textbox']:not(input):not(textarea)",
         "input:not([type])",
         "input[type='text']",
         "input[type='email']",
@@ -262,7 +264,7 @@ export function readGenericContext(platform: string): PageContext {
 
 export function fillField(selector: string, value: string) {
   const element = document.querySelector<
-    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLElement
   >(selector);
 
   if (!element) {
@@ -342,7 +344,15 @@ export function fillField(selector: string, value: string) {
     }
 
     return true;
-  } else {
+  } else if (
+    element instanceof HTMLElement &&
+    (element.isContentEditable || element.getAttribute("role") === "textbox")
+  ) {
+    element.textContent = value;
+  } else if (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement
+  ) {
     const prototype = Object.getPrototypeOf(element);
     const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
 
@@ -351,6 +361,8 @@ export function fillField(selector: string, value: string) {
     } else {
       element.value = value;
     }
+  } else {
+    return false;
   }
 
   element.dispatchEvent(new Event("input", { bubbles: true }));
