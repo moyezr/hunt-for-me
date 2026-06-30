@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
       <DashboardActions />
 
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-5">
         <div className="rounded-lg border border-[var(--line)] bg-white p-4">
           <p className="text-sm text-[var(--muted)]">Applied today</p>
           <p className="mt-1 text-2xl font-semibold">
@@ -50,6 +50,10 @@ export default function DashboardPage() {
           <p className="text-sm text-[var(--muted)]">High-fit backlog</p>
           <p className="mt-1 text-2xl font-semibold">{summary.highFit}</p>
         </div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+          <p className="text-sm text-[var(--muted)]">Saved answers</p>
+          <p className="mt-1 text-2xl font-semibold">{summary.savedAnswers}</p>
+        </div>
       </section>
 
       <ManualJobForm />
@@ -67,6 +71,7 @@ export default function DashboardPage() {
               role: job.title,
               jdText: job.jdText,
             });
+            const answerCount = Object.keys(job.answers).length;
 
             return (
               <article
@@ -79,7 +84,8 @@ export default function DashboardPage() {
                   </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     {job.platform} · Fit {job.fitScore ?? "-"} ·{" "}
-                    {resume.filename}
+                    {resume.filename} · {answerCount} saved answer
+                    {answerCount === 1 ? "" : "s"}
                   </p>
                 </div>
                 <JobStatusSelect jobId={job.id} status={job.status} />
@@ -117,6 +123,7 @@ export default function DashboardPage() {
               <th className="px-4 py-3">Company</th>
               <th className="px-4 py-3">Platform</th>
               <th className="px-4 py-3">Fit</th>
+              <th className="px-4 py-3">Answers</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">Link</th>
@@ -129,6 +136,7 @@ export default function DashboardPage() {
                 <td className="px-4 py-3">{job.company}</td>
                 <td className="px-4 py-3">{job.platform}</td>
                 <td className="px-4 py-3">{job.fitScore ?? "-"}</td>
+                <td className="px-4 py-3">{Object.keys(job.answers).length}</td>
                 <td className="px-4 py-3">
                   <JobStatusSelect jobId={job.id} status={job.status} />
                 </td>
@@ -155,7 +163,7 @@ export default function DashboardPage() {
               <tr>
                 <td
                   className="px-4 py-8 text-center text-[var(--muted)]"
-                  colSpan={7}
+                  colSpan={8}
                 >
                   No jobs saved yet. Use the extension or trigger the scraper.
                 </td>

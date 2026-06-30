@@ -597,6 +597,26 @@ test("builds a daily job hunt operating plan", () => {
   assert.equal(plan.outreach.unsentContacts, 1);
 });
 
+test("pipeline summary counts saved application answers", () => {
+  const summary = getPipelineSummary([
+    jobFixture({
+      id: "job_with_answers",
+      answers: {
+        "Full name": "Moyez Rabbani",
+        "Expected CTC": "12–18 LPA",
+      },
+    }),
+    jobFixture({
+      id: "job_with_one_answer",
+      answers: {
+        "Why this company?": "Specific answer",
+      },
+    }),
+  ]);
+
+  assert.equal(summary.savedAnswers, 3);
+});
+
 test("daily plan excludes closed and responded follow-ups", () => {
   const dueDate = new Date(Date.now() - 1000).toISOString();
   const plan = getDailyPlan({

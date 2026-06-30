@@ -23,6 +23,10 @@ export function getPipelineSummary(jobs: Job[]) {
   const highFit = jobs.filter(
     (job) => job.status === "discovered" && (job.fitScore ?? 0) >= 8,
   ).length;
+  const savedAnswers = jobs.reduce(
+    (total, job) => total + Object.keys(job.answers).length,
+    0,
+  );
   const targetRemaining = Math.max(dailyApplicationTarget - appliedToday, 0);
 
   return {
@@ -31,6 +35,7 @@ export function getPipelineSummary(jobs: Job[]) {
     targetRemaining,
     readyToApply,
     highFit,
+    savedAnswers,
   };
 }
 

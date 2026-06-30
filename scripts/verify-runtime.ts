@@ -170,6 +170,26 @@ if (
   );
 }
 
+const answerCacheJobs = await api<{
+  jobs: { company: string; title: string; answers: Record<string, string> }[];
+}>("/api/jobs");
+const answerCacheJob = answerCacheJobs.jobs.find(
+  (job) =>
+    job.company === `Runtime Smoke ${suffix}` &&
+    job.title === "Applied AI Engineer",
+);
+if (!answerCacheJob || Object.keys(answerCacheJob.answers).length !== 4) {
+  throw new Error("Batch answers were not saved to the job answer cache");
+}
+
+const dashboardHtml = await text("/dashboard");
+if (
+  !dashboardHtml.includes("Saved answers") ||
+  !dashboardHtml.includes(`Runtime Smoke ${suffix}`)
+) {
+  throw new Error("Dashboard did not surface saved application answers");
+}
+
 await apiFailure(
   "/api/answers",
   postJson({
