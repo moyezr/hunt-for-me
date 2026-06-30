@@ -15,6 +15,7 @@ import {
 import { contactIdentityKey } from "@/lib/contact-identity";
 import { csvEscape, parseCsvObjects, toCsv } from "@/lib/csv";
 import { getDailyPlan } from "@/lib/daily-plan";
+import { countSentContactsForDay } from "@/lib/db";
 import { createId } from "@/lib/id";
 import {
   buildOutreachPrompt,
@@ -265,6 +266,101 @@ test("builds a daily job hunt operating plan", () => {
   assert.equal(plan.outreach.linkedinDmsRemaining, 8);
   assert.equal(plan.outreach.followUpsDue, 1);
   assert.equal(plan.outreach.unsentContacts, 1);
+});
+
+test("counts linkedin outreach caps from sent contact history", () => {
+  const now = new Date();
+  const followUpDate = new Date(now);
+  followUpDate.setDate(followUpDate.getDate() + 3);
+  const oldFollowUpDate = new Date(now);
+  oldFollowUpDate.setDate(oldFollowUpDate.getDate() + 2);
+
+  const contacts = [
+    ...Array.from({ length: 15 }, (_, index) =>
+      contactFixture({
+        id: `con_note_${index}`,
+        status: "sent",
+        followUpDate: followUpDate.toISOString(),
+        messageHistory: [
+          {
+            channel: "linkedin_note",
+            body: "Connection note",
+            createdAt: now.toISOString(),
+          },
+        ],
+      }),
+    ),
+    ...Array.from({ length: 10 }, (_, index) =>
+      contactFixture({
+        id: `con_dm_${index}`,
+        status: "sent",
+        followUpDate: followUpDate.toISOString(),
+        messageHistory: [
+          {
+            channel: "linkedin_dm",
+            body: "LinkedIn DM",
+            createdAt: now.toISOString(),
+          },
+        ],
+      }),
+    ),
+    contactFixture({
+      id: "con_drafted",
+      status: "drafted",
+      followUpDate: followUpDate.toISOString(),
+      messageHistory: [
+        {
+          channel: "linkedin_note",
+          body: "Drafted note",
+          createdAt: now.toISOString(),
+        },
+      ],
+    }),
+    contactFixture({
+      id: "con_old",
+      status: "sent",
+      followUpDate: oldFollowUpDate.toISOString(),
+      messageHistory: [
+        {
+          channel: "linkedin_note",
+          body: "Old note",
+          createdAt: now.toISOString(),
+        },
+      ],
+    }),
+    contactFixture({
+      id: "con_twitter",
+      platform: "twitter",
+      status: "sent",
+      followUpDate: followUpDate.toISOString(),
+      messageHistory: [
+        {
+          channel: "twitter_dm",
+          body: "Twitter DM",
+          createdAt: now.toISOString(),
+        },
+      ],
+    }),
+  ];
+
+  assert.equal(
+    countSentContactsForDay({
+      contacts,
+      platform: "linkedin",
+      channel: "linkedin_note",
+      date: now,
+    }),
+    15,
+  );
+  assert.equal(
+    countSentContactsForDay({
+      contacts,
+      platform: "linkedin",
+      channel: "linkedin_dm",
+      date: now,
+    }),
+    10,
+  );
 });
 
 test("test db isolation directory exists when needed", () => {

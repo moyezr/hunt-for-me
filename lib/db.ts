@@ -286,39 +286,62 @@ export function getContacts() {
   return rows.map(toContact);
 }
 
+function startOfLocalDay(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function isWithinRange(value: string | null, start: Date, end: Date) {
+  if (!value) {
+    return false;
+  }
+
+  const time = new Date(value).getTime();
+  return time >= start.getTime() && time < end.getTime();
+}
+
+export function countSentContactsForDay({
+  contacts,
+  platform,
+  channel,
+  date = new Date(),
+}: {
+  contacts: Contact[];
+  platform: string;
+  channel: OutreachMessage["channel"];
+  date?: Date;
+}) {
+  const start = startOfLocalDay(date);
+  const end = addDays(start, 1);
+  const followUpStart = addDays(start, 3);
+  const followUpEnd = addDays(end, 3);
+
+  return contacts.filter(
+    (contact) =>
+      contact.platform === platform &&
+      contact.status === "sent" &&
+      contact.messageHistory.some((message) => message.channel === channel) &&
+      (isWithinRange(contact.createdAt, start, end) ||
+        isWithinRange(contact.followUpDate, followUpStart, followUpEnd)),
+  ).length;
+}
+
 export function countSentMessagesToday(
   platform: string,
   channel: OutreachMessage["channel"],
 ) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  const followUpStart = new Date(start);
-  followUpStart.setDate(followUpStart.getDate() + 3);
-  const followUpEnd = new Date(end);
-  followUpEnd.setDate(followUpEnd.getDate() + 3);
-  const row = getDb()
-    .prepare(
-      `SELECT COUNT(*) AS count
-      FROM contacts
-      WHERE platform = ?
-        AND status = 'sent'
-        AND message_history LIKE ?
-        AND (
-          created_at >= ?
-          OR (follow_up_date >= ? AND follow_up_date < ?)
-        )`,
-    )
-    .get(
-      platform,
-      `%"channel":"${channel}"%`,
-      start.toISOString(),
-      followUpStart.toISOString(),
-      followUpEnd.toISOString(),
-    ) as { count: number };
-
-  return row.count;
+  return countSentContactsForDay({
+    contacts: getContacts(),
+    platform,
+    channel,
+  });
 }
 
 export function getContact(id: string) {
