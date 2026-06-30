@@ -14,7 +14,9 @@ import {
   extractKeywords,
   extractProfileSkillKeywords,
   fallbackAnswer,
+  fallbackOutreachMessage,
   generateJobFitScore,
+  generateOutreach,
   getApplicationPrompt,
   getOpenRouterModel,
 } from "@/lib/ai";
@@ -401,6 +403,54 @@ test("keeps already specific outreach messages unchanged", () => {
     }),
     body,
   );
+});
+
+test("fallback outreach email includes subject and company context", async () => {
+  const message = fallbackOutreachMessage({
+    name: "Asha Rao",
+    title: "Founder",
+    company: "SignalWorks",
+    channel: "email",
+    companyContext: "hiring applied AI engineers",
+  });
+
+  assert.match(message, /^Subject: Hands-on AI\/full-stack engineer/);
+  assert.match(message, /Hi Asha/);
+  assert.match(message, /hiring applied AI engineers at SignalWorks/);
+});
+
+test("email outreach fallback is used without OpenRouter", async () => {
+  const previous = process.env.OPENROUTER_API_KEY;
+  try {
+    delete process.env.OPENROUTER_API_KEY;
+    const message = await generateOutreach({
+      name: "Asha Rao",
+      title: "Founder",
+      company: "SignalWorks",
+      channel: "email",
+      companyContext: "hiring applied AI engineers",
+    });
+
+    assert.match(message, /^Subject: Hands-on AI\/full-stack engineer/);
+    assert.match(message, /SignalWorks/);
+    assert.doesNotMatch(message, /salary|ctc|compensation|lpa|12/i);
+  } finally {
+    if (previous === undefined) {
+      delete process.env.OPENROUTER_API_KEY;
+    } else {
+      process.env.OPENROUTER_API_KEY = previous;
+    }
+  }
+});
+
+test("outreach specificity preserves email subject lines", () => {
+  const message = enforceOutreachSpecificity({
+    body: "Subject: Quick chat\n\nHi Asha, I build AI systems fast.",
+    company: "SignalWorks",
+    companyContext: "hiring applied AI engineers",
+  });
+
+  assert.match(message, /^Subject: Quick chat\n\nNoticed hiring applied AI/);
 });
 
 test("prioritizes next applications by fit score", () => {

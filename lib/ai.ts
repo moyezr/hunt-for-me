@@ -455,6 +455,11 @@ export function enforceOutreachSpecificity({
   const contextSentence = companyContext?.trim()
     ? `Noticed ${anchor}.`
     : `Noticed ${company}.`;
+  const subject = body.match(/^(subject:[^\n]+)(\n+)([\s\S]*)/i);
+  if (subject) {
+    return `${subject[1]}${subject[2]}${contextSentence} ${subject[3]}`;
+  }
+
   const greeting = body.match(/^(hi\s+[^,]+,\s*)/i);
   if (!greeting) {
     return `${contextSentence} ${body}`;
@@ -496,6 +501,38 @@ async function callOpenRouter(messages: ChatMessage[]) {
   };
 
   return data.choices?.[0]?.message?.content?.trim() || null;
+}
+
+export function fallbackOutreachMessage(input: {
+  name: string;
+  title: string;
+  company: string;
+  channel: OutreachMessage["channel"];
+  companyContext?: string;
+}) {
+  const profile = getProfile();
+  const firstName = input.name.trim().split(/\s+/)[0] || input.name;
+  const context = input.companyContext?.trim()
+    ? `${input.companyContext.trim()} at ${input.company}`
+    : input.company;
+  const proofPoint =
+    profile.outreachVoice.traits.find((trait) => trait.includes("500+")) ??
+    profile.outreachVoice.traits[0] ??
+    "high-agency";
+
+  if (input.channel === "email") {
+    return [
+      `Subject: Hands-on AI/full-stack engineer for ${input.company}`,
+      "",
+      `Hi ${firstName},`,
+      "",
+      `I noticed ${context}. I build production AI voice agents, RAG systems, and full-stack SaaS workflows, and I am used to moving from customer discovery to shipped software quickly.`,
+      "",
+      `I am ${proofPoint}, build fast, and can get useful without much ramp. If ${input.company} is hiring for ${input.title} or similar hands-on engineering roles, would a quick chat make sense?`,
+    ].join("\n");
+  }
+
+  return `Hi ${firstName}, noticed ${context}. I build AI and full-stack systems fast, ${proofPoint}, and can get useful without much ramp. Open to a quick chat if ${input.title} or hands-on engineering roles are relevant?`;
 }
 
 export async function generateJobFitScore({
@@ -696,11 +733,7 @@ export async function generateOutreach(input: {
     console.warn(error instanceof Error ? error.message : error);
   }
 
-  const proofPoint =
-    profile.outreachVoice.traits.find((trait) => trait.includes("500+")) ??
-    profile.outreachVoice.traits[0] ??
-    "high-agency";
-  body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, ${proofPoint}, and can get useful without much ramp. Open to a quick chat if ${input.title} or hands-on engineering roles are relevant?`;
+  body ??= fallbackOutreachMessage(input);
 
   body = enforceOutreachSpecificity({
     body: enforceOutreachSalaryGuardrail(body),
