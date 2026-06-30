@@ -31,6 +31,15 @@ export function isJobStatus(value: unknown): value is JobStatus {
   return typeof value === "string" && jobStatuses.includes(value);
 }
 
+export function isJobFitScore(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 1 &&
+    value <= 10
+  );
+}
+
 export function isContactStatus(value: unknown): value is ContactStatus {
   return typeof value === "string" && contactStatuses.includes(value);
 }

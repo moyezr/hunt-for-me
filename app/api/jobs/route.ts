@@ -2,7 +2,7 @@ import { createJob, getJobs } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { JobStatus } from "@/lib/types";
-import { isJobStatus } from "@/lib/validation";
+import { isJobFitScore, isJobStatus } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -40,6 +40,10 @@ export async function POST(request: Request) {
 
     if (body.status && !isJobStatus(body.status)) {
       return jsonError("Invalid job status", 400);
+    }
+
+    if (body.fitScore !== undefined && !isJobFitScore(body.fitScore)) {
+      return jsonError("Fit score must be an integer from 1 to 10", 400);
     }
 
     const result = createJob({

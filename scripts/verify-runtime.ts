@@ -204,6 +204,18 @@ if (!createdJob.job.id.startsWith("job_")) {
   throw new Error(`Unexpected job id: ${createdJob.job.id}`);
 }
 
+await apiFailure(
+  "/api/jobs",
+  postJson({
+    title: `Runtime Invalid Fit ${suffix}`,
+    company: `Runtime Invalid Fit Co ${suffix}`,
+    url: `https://example.com/jobs/invalid-fit-${suffix}`,
+    platform: "runtime",
+    fitScore: 11,
+  }),
+  400,
+);
+
 const appliedJob = await api<{
   job: { id: string; status: string; appliedAt: string | null };
 }>(`/api/jobs/${createdJob.job.id}`, patchJson({ status: "applied" }));

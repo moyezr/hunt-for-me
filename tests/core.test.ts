@@ -35,6 +35,7 @@ import type { Contact, Job } from "@/lib/types";
 import {
   defaultPlatformForChannel,
   isContactStatus,
+  isJobFitScore,
   isJobStatus,
   isOutreachChannel,
   isScrapePlatform,
@@ -291,6 +292,9 @@ test("outreach template validation requires every channel", () => {
 test("validates API status, outreach channel, and scraper platform enums", () => {
   assert.equal(isJobStatus("applied"), true);
   assert.equal(isJobStatus("submitted"), false);
+  assert.equal(isJobFitScore(8), true);
+  assert.equal(isJobFitScore(11), false);
+  assert.equal(isJobFitScore(7.5), false);
   assert.equal(isContactStatus("follow_up_due"), true);
   assert.equal(isContactStatus("archived"), false);
   assert.equal(isOutreachChannel("linkedin_dm"), true);
