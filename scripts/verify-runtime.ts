@@ -295,6 +295,11 @@ if (
 ) {
   throw new Error("Contact import aliases did not preserve context");
 }
+await apiFailure(
+  `/api/contacts/${aliasImport.contacts[0].id}`,
+  patchJson({ status: "sent" }),
+  400,
+);
 
 const drafted = await api<{
   contact: { id: string; status: string; messageHistory: unknown[] };

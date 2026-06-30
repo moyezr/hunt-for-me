@@ -24,6 +24,10 @@ export async function PATCH(
 
     if (body.status === "sent") {
       const channel = contact.messageHistory.at(-1)?.channel;
+      if (!channel) {
+        return jsonError("Draft a message before marking contact sent", 400);
+      }
+
       if (
         channel === "linkedin_note" &&
         countSentMessagesToday(contact.platform, "linkedin_note") >= 15
