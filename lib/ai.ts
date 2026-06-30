@@ -345,6 +345,38 @@ export function enforceOutreachSalaryGuardrail(message: string) {
   );
 }
 
+export function enforceOutreachSpecificity({
+  body,
+  company,
+  companyContext,
+}: {
+  body: string;
+  company: string;
+  companyContext?: string;
+}) {
+  const anchor = (companyContext?.trim() || company.trim()).replace(
+    /\s+/g,
+    " ",
+  );
+  if (!anchor) {
+    return body;
+  }
+
+  if (body.toLowerCase().includes(anchor.toLowerCase())) {
+    return body;
+  }
+
+  const contextSentence = companyContext?.trim()
+    ? `Noticed ${anchor}.`
+    : `Noticed ${company}.`;
+  const greeting = body.match(/^(hi\s+[^,]+,\s*)/i);
+  if (!greeting) {
+    return `${contextSentence} ${body}`;
+  }
+
+  return `${greeting[0]}${contextSentence} ${body.slice(greeting[0].length)}`;
+}
+
 async function callOpenRouter(messages: ChatMessage[]) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -532,7 +564,11 @@ export async function generateOutreach(input: {
     "high-agency";
   body ??= `Hi ${input.name}, noticed ${input.company}${input.companyContext ? ` - ${input.companyContext}` : ""}. I build AI and full-stack systems fast, ${proofPoint}, and can get useful without much ramp. Open to a quick chat if ${input.title} or hands-on engineering roles are relevant?`;
 
-  body = enforceOutreachSalaryGuardrail(body);
+  body = enforceOutreachSpecificity({
+    body: enforceOutreachSalaryGuardrail(body),
+    company: input.company,
+    companyContext: input.companyContext,
+  });
 
   if (template.maxChars && body.length > template.maxChars) {
     body = `${body.slice(0, template.maxChars - 3).trimEnd()}...`;

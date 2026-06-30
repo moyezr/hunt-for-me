@@ -9,6 +9,7 @@ import {
   enforceAnswerSpecificity,
   enforceKeywordCoverage,
   enforceOutreachSalaryGuardrail,
+  enforceOutreachSpecificity,
   enforceSalaryGuardrail,
   extractKeywords,
   extractProfileSkillKeywords,
@@ -253,6 +254,30 @@ test("replaces fully unsafe outreach salary messages", () => {
 
   assert.doesNotMatch(message, /salary|ctc|compensation|lpa|12/i);
   assert.match(message, /AI and full-stack systems/);
+});
+
+test("adds company context to generic outreach messages", () => {
+  const message = enforceOutreachSpecificity({
+    body: "Hi Asha, I build AI systems fast. Open to chat?",
+    company: "SignalWorks",
+    companyContext: "hiring applied AI engineers for customer workflows",
+  });
+
+  assert.match(message, /^Hi Asha, Noticed hiring applied AI engineers/);
+});
+
+test("keeps already specific outreach messages unchanged", () => {
+  const body =
+    "Hi Asha, noticed hiring applied AI engineers for customer workflows. I build fast.";
+
+  assert.equal(
+    enforceOutreachSpecificity({
+      body,
+      company: "SignalWorks",
+      companyContext: "hiring applied AI engineers for customer workflows",
+    }),
+    body,
+  );
 });
 
 test("prioritizes next applications by fit score", () => {
