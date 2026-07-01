@@ -316,6 +316,23 @@ export function deterministicOptionAnswer(question: string) {
   }
 
   if (
+    text.includes("phone code") ||
+    text.includes("country code") ||
+    text.includes("dialing code") ||
+    text.includes("isd code")
+  ) {
+    return pick([/\+91\b/, /\bindia\b/, /\bin\b/]) ?? "+91";
+  }
+
+  if (
+    text.includes("country") ||
+    text.includes("current country") ||
+    text.includes("location country")
+  ) {
+    return pick([/\bindia\b/, /^in$/]) ?? "India";
+  }
+
+  if (
     text.includes("sponsor") ||
     text.includes("sponsorship") ||
     text.includes("visa")

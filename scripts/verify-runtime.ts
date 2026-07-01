@@ -218,6 +218,14 @@ const batchAnswers = await api<{
         question: "Are you willing to relocate?\nOptions: No, Yes",
       },
       {
+        id: "phone_code",
+        question: "Phone country code\nOptions: +1, +91, +44",
+      },
+      {
+        id: "country",
+        question: "Current country\nOptions: United States, India",
+      },
+      {
         id: "work_auth",
         question:
           "Are you legally authorized to work in India?\nOptions: No, Yes",
@@ -233,7 +241,7 @@ const batchAnswers = await api<{
   }),
 );
 if (
-  batchAnswers.answers.length !== 8 ||
+  batchAnswers.answers.length !== 10 ||
   batchAnswers.answers[0].answer !== "Moyez Rabbani" ||
   !batchAnswers.answers[1].answer.includes("12–18 LPA") ||
   !/^\d+$/.test(batchAnswers.answers[2].answer) ||
@@ -244,10 +252,14 @@ if (
   batchAnswers.answers[4].category !== "option_choice" ||
   batchAnswers.answers[5].answer !== "Yes" ||
   batchAnswers.answers[5].category !== "option_choice" ||
-  batchAnswers.answers[6].answer !== "Yes" ||
+  batchAnswers.answers[6].answer !== "+91" ||
   batchAnswers.answers[6].category !== "option_choice" ||
-  batchAnswers.answers[7].answer !== "No" ||
-  batchAnswers.answers[7].category !== "option_choice"
+  batchAnswers.answers[7].answer !== "India" ||
+  batchAnswers.answers[7].category !== "option_choice" ||
+  batchAnswers.answers[8].answer !== "Yes" ||
+  batchAnswers.answers[8].category !== "option_choice" ||
+  batchAnswers.answers[9].answer !== "No" ||
+  batchAnswers.answers[9].category !== "option_choice"
 ) {
   throw new Error(
     "Batch answers did not preserve order, guardrails, numeric fields, and option choices",
@@ -270,6 +282,8 @@ if (
   ] ||
   !savedRuntimeAnswers["Preferred interview format\nOptions: Phone, Video"] ||
   !savedRuntimeAnswers["Are you willing to relocate?\nOptions: No, Yes"] ||
+  !savedRuntimeAnswers["Phone country code\nOptions: +1, +91, +44"] ||
+  !savedRuntimeAnswers["Current country\nOptions: United States, India"] ||
   !savedRuntimeAnswers[
     "Are you legally authorized to work in India?\nOptions: No, Yes"
   ] ||

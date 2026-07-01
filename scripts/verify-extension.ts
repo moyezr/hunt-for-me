@@ -69,6 +69,14 @@ const fixtureHtml = `<!doctype html>
           Email address
           <input id="email" type="email" />
         </label>
+        <label>
+          Phone country code
+          <select id="country-code">
+            <option value="+1">United States +1</option>
+            <option value="+91">India +91</option>
+            <option value="+44">United Kingdom +44</option>
+          </select>
+        </label>
         <label for="portfolio">Portfolio URL</label>
         <input id="portfolio" type="url" />
         <label>
@@ -292,6 +300,9 @@ try {
   const portfolioField = scan.fields.find((field) =>
     field.label.includes("Portfolio URL"),
   );
+  const countryCodeField = scan.fields.find((field) =>
+    field.label.includes("Phone country code"),
+  );
   const yearsField = scan.fields.find((field) =>
     field.label.includes("Years of TypeScript"),
   );
@@ -322,6 +333,9 @@ try {
   }
   if (!portfolioField) {
     throw new Error("Expected explicit label URL field was not detected");
+  }
+  if (!countryCodeField?.options?.some((option) => option.includes("+91"))) {
+    throw new Error("Expected country code select options were not detected");
   }
   if (!yearsField) {
     throw new Error("Expected number field was not detected");
@@ -386,6 +400,19 @@ try {
       );
     });
   }, nameField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "+91" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, countryCodeField.selector);
 
   await page.evaluate(async (selector) => {
     await new Promise((resolve) => {
@@ -473,6 +500,7 @@ try {
 
   const filled = await page.locator("#why-company").inputValue();
   const fullName = await page.locator("#full-name").inputValue();
+  const countryCode = await page.locator("#country-code").inputValue();
   const years = await page.locator("#years").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
   const coverNote = await page.locator("#cover-note").textContent();
@@ -491,6 +519,9 @@ try {
   }
   if (fullName !== "Moyez Rabbani") {
     throw new Error("Profile field was not filled into the input");
+  }
+  if (countryCode !== "+91") {
+    throw new Error("Country code select was not filled correctly");
   }
   if (years !== "3") {
     throw new Error("Numeric experience field was not filled correctly");

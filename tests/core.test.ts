@@ -163,6 +163,14 @@ test("resolves deterministic option answers", () => {
     "Yes",
   );
   assert.equal(
+    deterministicOptionAnswer("Phone country code\nOptions: +1, +91, +44"),
+    "+91",
+  );
+  assert.equal(
+    deterministicOptionAnswer("Current country\nOptions: United States, India"),
+    "India",
+  );
+  assert.equal(
     deterministicAnswerForQuestion(
       "Preferred interview format\nOptions: Phone, Video",
     ),
