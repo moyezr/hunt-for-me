@@ -66,6 +66,10 @@ locked. It does not print cookies or submit applications. Override the targets
 with `HFM_LIVE_URLS=https://example.com/job-a,https://example.com/job-b` when you
 want to smoke-test specific live job pages.
 
+If the command fails for a platform with a login URL/title, sign into that
+platform once in the Moyez Work Chrome profile, then rerun it. You can also
+limit the smoke to known-authenticated pages with `HFM_LIVE_URLS`.
+
 ## Data
 
 - `data/profile.json` is the candidate source of truth.
