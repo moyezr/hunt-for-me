@@ -307,6 +307,24 @@ export function deterministicOptionAnswer(question: string) {
   }
 
   if (
+    text.includes("sponsor") ||
+    text.includes("sponsorship") ||
+    text.includes("visa")
+  ) {
+    return pick([/\bno\b/, /not required/, /do not/]) ?? "No";
+  }
+
+  if (
+    text.includes("authorized to work") ||
+    text.includes("authorised to work") ||
+    text.includes("eligible to work") ||
+    text.includes("right to work") ||
+    text.includes("work permit")
+  ) {
+    return pick([/\byes\b/, /\btrue\b/]) ?? "Yes";
+  }
+
+  if (
     text.includes("confirm") ||
     text.includes("agree") ||
     text.includes("consent") ||

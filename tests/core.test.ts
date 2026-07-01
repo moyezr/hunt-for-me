@@ -162,6 +162,18 @@ test("resolves deterministic option answers", () => {
     ),
     "Video",
   );
+  assert.equal(
+    deterministicOptionAnswer(
+      "Are you legally authorized to work in India?\nOptions: No, Yes",
+    ),
+    "Yes",
+  );
+  assert.equal(
+    deterministicOptionAnswer(
+      "Will you require visa sponsorship now or in the future?\nOptions: Yes, No",
+    ),
+    "No",
+  );
 });
 
 test("recommends tailored resumes by role", () => {
