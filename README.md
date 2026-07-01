@@ -59,14 +59,12 @@ npm run verify:live:chrome
 ```
 
 This verifies the local Chrome `Profile 1` / `Moyez Work` profile contains
-`moyezrabbani.work@gmail.com`, launches that profile with remote debugging, opens
-read-only pages for the configured job platforms, checks that they do not land on
-login walls, and then closes the pages. It refuses to attach to an already
-running ambiguous Chrome session; quit Chrome first, or explicitly provide
-`HFM_CHROME_CDP_URL` for a Chrome instance you already started with the Moyez
-Work profile. It does not print cookies or submit applications. Override the
-targets with `HFM_LIVE_URLS=https://example.com/job-a,https://example.com/job-b`
-when you want to smoke-test specific live job pages.
+`moyezrabbani.work@gmail.com`, launches that profile in Chrome, opens read-only
+pages for the configured job platforms, checks that they do not land on login
+walls, and then closes the pages. Quit Chrome first so the profile files are not
+locked. It does not print cookies or submit applications. Override the targets
+with `HFM_LIVE_URLS=https://example.com/job-a,https://example.com/job-b` when you
+want to smoke-test specific live job pages.
 
 ## Data
 

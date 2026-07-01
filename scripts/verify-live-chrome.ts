@@ -1,4 +1,3 @@
-import { type ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -13,7 +12,6 @@ type LiveTarget = {
 const workEmail = "moyezrabbani.work@gmail.com";
 const workProfileDirectory =
   process.env.HFM_CHROME_PROFILE_DIRECTORY ?? "Profile 1";
-const remoteDebuggingPort = Number(process.env.HFM_CHROME_DEBUG_PORT ?? 9223);
 const chromeUserDataDir = path.join(
   process.env.HOME ?? "",
   "Library",
@@ -119,42 +117,7 @@ function singletonLockExists() {
   }
 }
 
-async function waitForEndpoint(process: ChildProcess) {
-  const started = Date.now();
-  const timeoutMs = 15000;
-  let lastError = "";
-
-  while (Date.now() - started < timeoutMs) {
-    if (process.exitCode !== null) {
-      throw new Error(
-        `Chrome exited before CDP was ready: ${process.exitCode}`,
-      );
-    }
-
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:${remoteDebuggingPort}/json/version`,
-      );
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          webSocketDebuggerUrl?: string;
-        };
-        if (payload.webSocketDebuggerUrl) {
-          return payload.webSocketDebuggerUrl;
-        }
-      }
-      lastError = `${response.status} ${response.statusText}`;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : "Unknown error";
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  throw new Error(`Chrome CDP was not ready: ${lastError}`);
-}
-
-async function launchWorkChrome() {
+async function launchWorkContext() {
   if (!fs.existsSync(chromeBinary)) {
     throw new Error(`Chrome binary not found: ${chromeBinary}`);
   }
@@ -162,45 +125,22 @@ async function launchWorkChrome() {
   if (singletonLockExists()) {
     throw new Error(
       [
-        "Chrome is already running, so the live verifier refuses to attach to an ambiguous profile.",
-        `Quit Chrome, then rerun npm run verify:live:chrome so it can launch ${workProfileDirectory} (${workEmail}) with remote debugging.`,
-        "Alternatively, start the Moyez Work profile yourself with remote debugging and set HFM_CHROME_CDP_URL to that browser websocket URL.",
+        "Chrome is already running, so the live verifier cannot safely open the Moyez Work profile files.",
+        `Quit Chrome fully, then rerun npm run verify:live:chrome so it can launch ${workProfileDirectory} (${workEmail}) directly.`,
       ].join(" "),
     );
   }
 
-  const process = spawn(
-    chromeBinary,
-    [
-      `--user-data-dir=${chromeUserDataDir}`,
+  return chromium.launchPersistentContext(chromeUserDataDir, {
+    channel: "chrome",
+    headless: false,
+    executablePath: chromeBinary,
+    args: [
       `--profile-directory=${workProfileDirectory}`,
-      `--remote-debugging-port=${remoteDebuggingPort}`,
       "--no-first-run",
       "--no-default-browser-check",
-      "about:blank",
     ],
-    {
-      detached: true,
-      stdio: "ignore",
-    },
-  );
-
-  process.unref();
-  return {
-    endpoint: await waitForEndpoint(process),
-    launched: true,
-  };
-}
-
-async function chromeEndpoint() {
-  if (process.env.HFM_CHROME_CDP_URL) {
-    return {
-      endpoint: process.env.HFM_CHROME_CDP_URL,
-      launched: false,
-    };
-  }
-
-  return launchWorkChrome();
+  });
 }
 
 async function readHealth() {
@@ -213,12 +153,7 @@ async function readHealth() {
 await readHealth();
 assertWorkProfile();
 
-const { endpoint, launched } = await chromeEndpoint();
-const browser = await chromium.connectOverCDP(endpoint);
-const context = browser.contexts()[0];
-if (!context) {
-  throw new Error("No Chrome browser context is available over CDP");
-}
+const context = await launchWorkContext();
 
 const results = [];
 for (const target of configuredTargets()) {
@@ -266,9 +201,7 @@ for (const target of configuredTargets()) {
   }
 }
 
-if (launched) {
-  await browser.close();
-}
+await context.close();
 
 const failed = results.filter(
   (result) => !result.authenticated || !result.expectedContent,
@@ -287,7 +220,6 @@ console.log(
       ok: true,
       profileDirectory: workProfileDirectory,
       profileEmail: workEmail,
-      endpoint,
       targets: results,
     },
     null,
