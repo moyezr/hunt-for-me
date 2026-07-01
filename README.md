@@ -2,6 +2,8 @@
 
 Local job hunt cockpit for Moyez Rabbani. It combines a Next.js app, SQLite data store, Playwright scrapers, OpenRouter-backed answer/outreach generation, and a Chrome extension that fills application fields only after human review.
 
+For step-by-step operating instructions, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
+
 ## Run Locally
 
 1. Put `OPENROUTER_API_KEY` in `.env`.
