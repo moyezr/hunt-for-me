@@ -302,6 +302,15 @@ export function deterministicOptionAnswer(question: string) {
     return pick([/\bremote\b/, /\bhybrid\b/]) ?? options[0];
   }
 
+  if (
+    text.includes("relocate") ||
+    text.includes("relocation") ||
+    text.includes("open to moving") ||
+    text.includes("willing to move")
+  ) {
+    return pick([/\byes\b/, /\bopen\b/, /\bwilling\b/, /\btrue\b/]) ?? "Yes";
+  }
+
   if (text.includes("interview")) {
     return pick([/\bvideo\b/, /\bphone\b/]) ?? options[0];
   }

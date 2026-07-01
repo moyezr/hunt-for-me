@@ -159,6 +159,10 @@ test("resolves deterministic option answers", () => {
     "Video",
   );
   assert.equal(
+    deterministicOptionAnswer("Are you willing to relocate?\nOptions: No, Yes"),
+    "Yes",
+  );
+  assert.equal(
     deterministicAnswerForQuestion(
       "Preferred interview format\nOptions: Phone, Video",
     ),

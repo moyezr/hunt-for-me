@@ -95,6 +95,17 @@ const fixtureHtml = `<!doctype html>
             Video
           </label>
         </fieldset>
+        <fieldset>
+          <legend>Are you willing to relocate?</legend>
+          <label>
+            <input name="relocation" type="radio" value="no" />
+            No
+          </label>
+          <label>
+            <input name="relocation" type="radio" value="yes" />
+            Yes
+          </label>
+        </fieldset>
         <label>
           <input id="confirm-accuracy" type="checkbox" />
           I confirm these details are accurate
@@ -295,6 +306,11 @@ try {
       field.type === "radio" &&
       field.label.includes("Preferred interview format"),
   );
+  const relocationField = scan.fields.find(
+    (field) =>
+      field.type === "radio" &&
+      field.label.includes("Are you willing to relocate"),
+  );
   const confirmField = scan.fields.find((field) =>
     field.label.includes("I confirm these details are accurate"),
   );
@@ -324,6 +340,13 @@ try {
     !interviewField.options?.some((option) => /video/i.test(option))
   ) {
     throw new Error("Expected radio group options to include every choice");
+  }
+  if (
+    !relocationField?.selector.includes('name="relocation"') ||
+    !relocationField.options?.some((option) => /^no$/i.test(option)) ||
+    !relocationField.options?.some((option) => /^yes$/i.test(option))
+  ) {
+    throw new Error("Expected relocation radio group options");
   }
   if (!confirmField) {
     throw new Error("Expected checkbox field was not detected");
@@ -433,6 +456,19 @@ try {
         resolve,
       );
     });
+  }, relocationField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Yes" }],
+        },
+        {},
+        resolve,
+      );
+    });
   }, confirmField.selector);
 
   const filled = await page.locator("#why-company").inputValue();
@@ -442,6 +478,9 @@ try {
   const coverNote = await page.locator("#cover-note").textContent();
   const videoChecked = await page
     .locator('input[name="interview-format"][value="video"]')
+    .isChecked();
+  const relocationChecked = await page
+    .locator('input[name="relocation"][value="yes"]')
     .isChecked();
   const confirmChecked = await page.locator("#confirm-accuracy").isChecked();
   const events = await page.evaluate(() => window.hfmEvents);
@@ -464,6 +503,9 @@ try {
   }
   if (!videoChecked) {
     throw new Error("Radio field was not checked by matching answer text");
+  }
+  if (!relocationChecked) {
+    throw new Error("Relocation radio field was not checked");
   }
   if (!confirmChecked) {
     throw new Error("Checkbox field was not checked by affirmative answer");

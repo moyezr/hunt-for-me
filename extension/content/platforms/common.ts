@@ -307,13 +307,16 @@ export function fillField(selector: string, value: string) {
       .split(/[,;/]|\bor\b|\band\b/)
       .map((part) => part.trim())
       .filter(Boolean);
+    const isSingleCheckbox =
+      candidates.length === 1 && element.type === "checkbox";
 
     const matches = candidates.filter((candidate) => {
       const label = labelFor(candidate).toLowerCase();
       const candidateValue = candidate.value.toLowerCase();
       return answerParts.some(
         (part) =>
-          ["yes", "true", "checked", "agree", "accepted"].includes(part) ||
+          (isSingleCheckbox &&
+            ["yes", "true", "checked", "agree", "accepted"].includes(part)) ||
           candidateValue === part ||
           label === part ||
           label.includes(part) ||
