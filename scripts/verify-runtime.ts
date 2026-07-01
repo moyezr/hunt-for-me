@@ -315,9 +315,13 @@ if (
 const dashboardHtml = await text("/dashboard");
 if (
   !dashboardHtml.includes("Saved answers") ||
+  !dashboardHtml.includes("Scraper run") ||
+  !dashboardHtml.includes("Trigger scraper") ||
   !dashboardHtml.includes(runtimeCompany)
 ) {
-  throw new Error("Dashboard did not surface saved application answers");
+  throw new Error(
+    "Dashboard did not surface saved answers and scraper controls",
+  );
 }
 
 await apiFailure(
