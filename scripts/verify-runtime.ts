@@ -720,6 +720,10 @@ const outreachHtml = await text("/outreach");
 if (
   !outreachHtml.includes("Follow-ups due") ||
   !outreachHtml.includes("Load follow-ups due") ||
+  !outreachHtml.includes("Batch review") ||
+  !outreachHtml.includes(
+    "Load a queue and draft messages to review them here",
+  ) ||
   !outreachHtml.includes("Contact status")
 ) {
   throw new Error("Outreach page did not render follow-up queue controls");

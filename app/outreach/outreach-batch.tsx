@@ -185,6 +185,17 @@ export function OutreachBatch({
     }
   }
 
+  function selectQueueDraft(index: number) {
+    setQueueIndex(index);
+    loadContact(activeQueueContact(queue, index));
+    setDraft(queueDrafts[index] ?? null);
+    setStatus(
+      queueDrafts[index]
+        ? `Reviewing draft ${index + 1} of ${queue.length}.`
+        : `No draft ready for ${queue[index]?.name ?? "this contact"}.`,
+    );
+  }
+
   function rememberDraft(index: number, nextDraft: Draft) {
     setQueueDrafts((current) => {
       const next = [...current];
@@ -486,10 +497,14 @@ export function OutreachBatch({
             if (!draft) {
               return;
             }
-            setDraft({
+            const nextDraft = {
               ...draft,
               message: { ...draft.message, body: event.target.value },
-            });
+            };
+            setDraft(nextDraft);
+            if (queue.length > 0 && queueIndex < queue.length) {
+              rememberDraft(queueIndex, nextDraft);
+            }
           }}
           value={draft?.message.body ?? ""}
         />
@@ -518,6 +533,47 @@ export function OutreachBatch({
           >
             Skip
           </button>
+        </div>
+        <div className="grid gap-2">
+          <h3 className="text-sm font-semibold">Batch review</h3>
+          {queue.length > 0 ? (
+            <div className="grid max-h-80 gap-2 overflow-auto">
+              {queue.map((contact, index) => {
+                const queuedDraft = queueDrafts[index];
+                const isActive = index === queueIndex;
+
+                return (
+                  <button
+                    className={`rounded-md border px-3 py-2 text-left text-sm ${
+                      isActive
+                        ? "border-[var(--accent)] bg-[#eef4ff]"
+                        : "border-[var(--line)] bg-white"
+                    }`}
+                    key={
+                      contact.id ||
+                      contact.profileUrl ||
+                      `${contact.name}-${contact.company}`
+                    }
+                    onClick={() => selectQueueDraft(index)}
+                    type="button"
+                  >
+                    <span className="block font-medium">
+                      {index + 1}. {contact.name} · {contact.company}
+                    </span>
+                    <span className="block text-[var(--muted)]">
+                      {queuedDraft
+                        ? queuedDraft.message.body.slice(0, 140)
+                        : "No draft ready"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--muted)]">
+              Load a queue and draft messages to review them here.
+            </p>
+          )}
         </div>
       </div>
     </section>
