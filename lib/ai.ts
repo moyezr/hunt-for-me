@@ -292,6 +292,49 @@ export function deterministicOptionAnswer(question: string) {
         options.find((option) => pattern.test(option.toLowerCase())),
       )
       .find(Boolean);
+  const experienceYears = Number(roundedProfileExperienceYears());
+
+  if (
+    Number.isFinite(experienceYears) &&
+    (text.includes("experience") ||
+      text.includes("exp") ||
+      text.includes("worked"))
+  ) {
+    const rangeOption = options.find((option) => {
+      const normalized = option.toLowerCase();
+      const range = normalized.match(/(\d+)\s*(?:-|–|to)\s*(\d+)/);
+      if (range) {
+        const min = Number(range[1]);
+        const max = Number(range[2]);
+        return experienceYears >= min && experienceYears <= max;
+      }
+
+      const plus = normalized.match(/(\d+)\s*\+/);
+      if (plus) {
+        return experienceYears >= Number(plus[1]);
+      }
+
+      const exact = normalized.match(/\b(\d+)\b/);
+      return exact ? experienceYears === Number(exact[1]) : false;
+    });
+
+    if (rangeOption) {
+      return rangeOption;
+    }
+  }
+
+  if (
+    text.includes("notice") ||
+    text.includes("when can you start") ||
+    text.includes("when can you join") ||
+    text.includes("joining date") ||
+    text.includes("available to start")
+  ) {
+    return (
+      pick([/available.*discuss/, /negotiable/, /flexible/, /available/]) ??
+      options[0]
+    );
+  }
 
   if (
     text.includes("work mode") ||

@@ -171,6 +171,18 @@ test("resolves deterministic option answers", () => {
     "India",
   );
   assert.equal(
+    deterministicOptionAnswer(
+      "Total experience\nOptions: 0-1 years, 2-4 years, 5+ years",
+    ),
+    "2-4 years",
+  );
+  assert.equal(
+    deterministicOptionAnswer(
+      "Notice period\nOptions: Immediate, 30 days, Negotiable",
+    ),
+    "Negotiable",
+  );
+  assert.equal(
     deterministicAnswerForQuestion(
       "Preferred interview format\nOptions: Phone, Video",
     ),

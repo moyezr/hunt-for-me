@@ -84,6 +84,22 @@ const fixtureHtml = `<!doctype html>
           <input id="years" type="number" />
         </label>
         <label>
+          Total experience
+          <select id="experience-range">
+            <option value="0-1">0-1 years</option>
+            <option value="2-4">2-4 years</option>
+            <option value="5+">5+ years</option>
+          </select>
+        </label>
+        <label>
+          Notice period
+          <select id="notice-period">
+            <option value="immediate">Immediate</option>
+            <option value="30">30 days</option>
+            <option value="negotiable">Negotiable</option>
+          </select>
+        </label>
+        <label>
           Preferred work mode
           <select id="work-mode">
             <option value="">Select one</option>
@@ -306,6 +322,12 @@ try {
   const yearsField = scan.fields.find((field) =>
     field.label.includes("Years of TypeScript"),
   );
+  const experienceRangeField = scan.fields.find((field) =>
+    field.label.includes("Total experience"),
+  );
+  const noticeField = scan.fields.find((field) =>
+    field.label.includes("Notice period"),
+  );
   const workModeField = scan.fields.find((field) =>
     field.label.includes("Preferred work mode"),
   );
@@ -339,6 +361,12 @@ try {
   }
   if (!yearsField) {
     throw new Error("Expected number field was not detected");
+  }
+  if (!experienceRangeField?.options?.includes("2-4 years")) {
+    throw new Error("Expected experience range select options");
+  }
+  if (!noticeField?.options?.includes("Negotiable")) {
+    throw new Error("Expected notice period select options");
   }
   if (!workModeField?.options?.includes("Remote")) {
     throw new Error("Expected select options were not detected");
@@ -432,6 +460,32 @@ try {
       window.__hfmContentListener(
         {
           type: "HFM_FILL",
+          answers: [{ selector, answer: "2-4 years" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, experienceRangeField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
+          answers: [{ selector, answer: "Negotiable" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, noticeField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
           answers: [{ selector, answer: "Remote" }],
         },
         {},
@@ -502,6 +556,8 @@ try {
   const fullName = await page.locator("#full-name").inputValue();
   const countryCode = await page.locator("#country-code").inputValue();
   const years = await page.locator("#years").inputValue();
+  const experienceRange = await page.locator("#experience-range").inputValue();
+  const noticePeriod = await page.locator("#notice-period").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
   const coverNote = await page.locator("#cover-note").textContent();
   const videoChecked = await page
@@ -525,6 +581,12 @@ try {
   }
   if (years !== "3") {
     throw new Error("Numeric experience field was not filled correctly");
+  }
+  if (experienceRange !== "2-4") {
+    throw new Error("Experience range select was not filled correctly");
+  }
+  if (noticePeriod !== "negotiable") {
+    throw new Error("Notice period select was not filled correctly");
   }
   if (workMode !== "remote") {
     throw new Error("Select field was not matched and filled by option text");
