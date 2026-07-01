@@ -1,6 +1,6 @@
-const baseUrl = process.env.HFM_BASE_URL ?? "http://localhost:3000";
+import { parseCsvObjects } from "@/lib/csv";
 
-export {};
+const baseUrl = process.env.HFM_BASE_URL ?? "http://localhost:3000";
 
 type ApiResponse<T> =
   | {
@@ -177,6 +177,8 @@ if (joining.answer !== "Available to discuss") {
 
 const specificityCompany = `Runtime Specificity ${suffix}`;
 const specificityRole = "Forward Deployed AI Engineer";
+const runtimeCompany = `Runtime Smoke ${suffix}`;
+const runtimeRole = "Applied AI Engineer";
 const specificity = await api<{ answer: string; category: string }>(
   "/api/answer",
   postJson({
@@ -222,8 +224,8 @@ const batchAnswers = await api<{
           "Will you require visa sponsorship now or in the future?\nOptions: Yes, No",
       },
     ],
-    company: `Runtime Smoke ${suffix}`,
-    role: "Applied AI Engineer",
+    company: runtimeCompany,
+    role: runtimeRole,
   }),
 );
 if (
@@ -250,9 +252,7 @@ const answerCacheJobs = await api<{
   jobs: { company: string; title: string; answers: Record<string, string> }[];
 }>("/api/jobs");
 const answerCacheJob = answerCacheJobs.jobs.find(
-  (job) =>
-    job.company === `Runtime Smoke ${suffix}` &&
-    job.title === "Applied AI Engineer",
+  (job) => job.company === runtimeCompany && job.title === runtimeRole,
 );
 const savedRuntimeAnswers = answerCacheJob?.answers ?? {};
 if (
@@ -276,7 +276,7 @@ if (
 const dashboardHtml = await text("/dashboard");
 if (
   !dashboardHtml.includes("Saved answers") ||
-  !dashboardHtml.includes(`Runtime Smoke ${suffix}`)
+  !dashboardHtml.includes(runtimeCompany)
 ) {
   throw new Error("Dashboard did not surface saved application answers");
 }
@@ -644,6 +644,16 @@ if (templates.config.channels.linkedin_note.maxChars !== 280) {
 const jobsCsv = await text("/api/export/jobs");
 if (!jobsCsv.includes(createdJob.job.id)) {
   throw new Error("Jobs CSV did not include runtime job");
+}
+const exportedJobs = parseCsvObjects(jobsCsv);
+const exportedAnswerCacheJob = exportedJobs.find(
+  (job) => job.company === runtimeCompany && job.title === runtimeRole,
+);
+if (
+  exportedAnswerCacheJob?.answer_count !==
+  String(Object.keys(savedRuntimeAnswers).length)
+) {
+  throw new Error("Jobs CSV did not include saved answer counts");
 }
 
 const contactsCsv = await text("/api/export/contacts");
