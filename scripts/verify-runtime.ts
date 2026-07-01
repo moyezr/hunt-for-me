@@ -312,6 +312,17 @@ if (!resume.resume.exists) {
   throw new Error(`Recommended resume is missing: ${resume.resume.filename}`);
 }
 
+await apiFailure(
+  "/api/jobs",
+  postJson({
+    title: "Open role",
+    company: "Unknown company",
+    url: `https://example.com/jobs/placeholder-${suffix}`,
+    platform: "runtime",
+  }),
+  400,
+);
+
 const createdJob = await api<{
   job: { id: string; status: string; appliedAt: string | null };
 }>(
