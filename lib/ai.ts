@@ -153,6 +153,25 @@ export function classifyQuestion(question: string) {
   }
 
   if (
+    text.includes("current company") ||
+    text.includes("current employer") ||
+    text.includes("present company") ||
+    text.includes("present employer")
+  ) {
+    return "current_company";
+  }
+
+  if (
+    text.includes("current designation") ||
+    text.includes("current job title") ||
+    text.includes("current role") ||
+    text.includes("present designation") ||
+    text.includes("present role")
+  ) {
+    return "current_title";
+  }
+
+  if (
     text.includes("education") ||
     text.includes("qualification") ||
     text.includes("degree") ||
@@ -218,7 +237,13 @@ export function classifyQuestion(question: string) {
     return "career_goal";
   }
 
-  if (text.includes("notice")) {
+  if (
+    text.includes("notice") ||
+    text.includes("when can you start") ||
+    text.includes("when can you join") ||
+    text.includes("joining date") ||
+    text.includes("available to start")
+  ) {
     return "notice_period";
   }
 
@@ -336,6 +361,9 @@ export function enforceKeywordCoverage(answer: string, jdText = "") {
 
 export function deterministicProfileAnswer(category: string) {
   const profile = getProfile();
+  const currentExperience =
+    profile.experience.find((item) => item.end.toLowerCase() === "present") ??
+    profile.experience[0];
 
   switch (category) {
     case "full_name":
@@ -352,6 +380,10 @@ export function deterministicProfileAnswer(category: string) {
       return profile.contact.website;
     case "location":
       return profile.locationPreferences.join(", ");
+    case "current_company":
+      return currentExperience?.company ?? null;
+    case "current_title":
+      return currentExperience?.title ?? null;
     case "education":
       return profile.education
         .map((item) =>
@@ -455,6 +487,8 @@ export function enforceAnswerSpecificity({
       "github",
       "website",
       "location",
+      "current_company",
+      "current_title",
       "education",
       "confirmation",
       "option_choice",

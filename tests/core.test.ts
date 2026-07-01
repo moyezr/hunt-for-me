@@ -64,6 +64,8 @@ test("classifies profile fields", () => {
     classifyQuestion("Highest education qualification"),
     "education",
   );
+  assert.equal(classifyQuestion("Current employer"), "current_company");
+  assert.equal(classifyQuestion("Current designation"), "current_title");
 });
 
 test("classifies option choice fields", () => {
@@ -99,6 +101,7 @@ test("classifies narrative motivation questions", () => {
     classifyQuestion("Where do you see yourself in five years?"),
     "career_goal",
   );
+  assert.equal(classifyQuestion("When can you join?"), "notice_period");
 });
 
 test("resolves deterministic profile answers without AI", () => {
@@ -110,6 +113,18 @@ test("resolves deterministic profile answers without AI", () => {
   assert.match(
     deterministicProfileAnswer("education") ?? "",
     /Bachelor of Technology, Computer Science and Engineering, Techno India University/,
+  );
+  assert.equal(
+    deterministicProfileAnswer("current_company"),
+    "FluxxForward - IT Consulting via WeeTravel",
+  );
+  assert.equal(
+    deterministicProfileAnswer("current_title"),
+    "Lead Software Engineer / Founding Engineer",
+  );
+  assert.equal(
+    deterministicAnswerForQuestion("When can you join?"),
+    "Available to discuss",
   );
   assert.equal(deterministicProfileAnswer("confirmation"), "Yes");
 });

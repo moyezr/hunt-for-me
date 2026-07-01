@@ -131,6 +131,30 @@ if (
   throw new Error("Education answer did not use the resume-backed profile");
 }
 
+const currentEmployer = await api<{ answer: string }>(
+  "/api/answer",
+  postJson({
+    question: "Current employer",
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+);
+if (!currentEmployer.answer.includes("FluxxForward")) {
+  throw new Error("Current employer answer did not use the profile");
+}
+
+const joining = await api<{ answer: string }>(
+  "/api/answer",
+  postJson({
+    question: "When can you join?",
+    company: `Runtime Smoke ${suffix}`,
+    role: "Applied AI Engineer",
+  }),
+);
+if (joining.answer !== "Available to discuss") {
+  throw new Error("Joining availability answer did not use notice period");
+}
+
 const specificityCompany = `Runtime Specificity ${suffix}`;
 const specificityRole = "Forward Deployed AI Engineer";
 const specificity = await api<{ answer: string; category: string }>(
