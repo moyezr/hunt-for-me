@@ -369,6 +369,19 @@ try {
       window.__hfmContentListener(
         {
           type: "HFM_FILL",
+          answers: [{ selector, answer: "3" }],
+        },
+        {},
+        resolve,
+      );
+    });
+  }, yearsField.selector);
+
+  await page.evaluate(async (selector) => {
+    await new Promise((resolve) => {
+      window.__hfmContentListener(
+        {
+          type: "HFM_FILL",
           answers: [{ selector, answer: "Remote" }],
         },
         {},
@@ -424,6 +437,7 @@ try {
 
   const filled = await page.locator("#why-company").inputValue();
   const fullName = await page.locator("#full-name").inputValue();
+  const years = await page.locator("#years").inputValue();
   const workMode = await page.locator("#work-mode").inputValue();
   const coverNote = await page.locator("#cover-note").textContent();
   const videoChecked = await page
@@ -438,6 +452,9 @@ try {
   }
   if (fullName !== "Moyez Rabbani") {
     throw new Error("Profile field was not filled into the input");
+  }
+  if (years !== "3") {
+    throw new Error("Numeric experience field was not filled correctly");
   }
   if (workMode !== "remote") {
     throw new Error("Select field was not matched and filled by option text");

@@ -182,6 +182,7 @@ const batchAnswers = await api<{
     questions: [
       { id: "name", question: "Full name" },
       { id: "salary", question: "Expected CTC" },
+      { id: "years", question: "Years of TypeScript experience" },
       {
         id: "work_mode",
         question: "Preferred work mode\nOptions: Select one, Remote, Hybrid",
@@ -196,16 +197,18 @@ const batchAnswers = await api<{
   }),
 );
 if (
-  batchAnswers.answers.length !== 4 ||
+  batchAnswers.answers.length !== 5 ||
   batchAnswers.answers[0].answer !== "Moyez Rabbani" ||
   !batchAnswers.answers[1].answer.includes("12–18 LPA") ||
-  batchAnswers.answers[2].answer !== "Remote" ||
-  batchAnswers.answers[2].category !== "option_choice" ||
-  batchAnswers.answers[3].answer !== "Video" ||
-  batchAnswers.answers[3].category !== "option_choice"
+  !/^\d+$/.test(batchAnswers.answers[2].answer) ||
+  batchAnswers.answers[2].category !== "experience_years" ||
+  batchAnswers.answers[3].answer !== "Remote" ||
+  batchAnswers.answers[3].category !== "option_choice" ||
+  batchAnswers.answers[4].answer !== "Video" ||
+  batchAnswers.answers[4].category !== "option_choice"
 ) {
   throw new Error(
-    "Batch answers did not preserve order, guardrails, and option choices",
+    "Batch answers did not preserve order, guardrails, numeric fields, and option choices",
   );
 }
 
@@ -221,6 +224,7 @@ const savedRuntimeAnswers = answerCacheJob?.answers ?? {};
 if (
   !savedRuntimeAnswers["Full name"] ||
   !savedRuntimeAnswers["Expected CTC"] ||
+  !savedRuntimeAnswers["Years of TypeScript experience"] ||
   !savedRuntimeAnswers[
     "Preferred work mode\nOptions: Select one, Remote, Hybrid"
   ] ||

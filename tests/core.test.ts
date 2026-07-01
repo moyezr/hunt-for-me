@@ -66,6 +66,10 @@ test("classifies profile fields", () => {
   );
   assert.equal(classifyQuestion("Current employer"), "current_company");
   assert.equal(classifyQuestion("Current designation"), "current_title");
+  assert.equal(
+    classifyQuestion("Years of TypeScript experience"),
+    "experience_years",
+  );
 });
 
 test("classifies option choice fields", () => {
@@ -125,6 +129,10 @@ test("resolves deterministic profile answers without AI", () => {
   assert.equal(
     deterministicAnswerForQuestion("When can you join?"),
     "Available to discuss",
+  );
+  assert.match(
+    deterministicAnswerForQuestion("Years of TypeScript experience") ?? "",
+    /^\d+$/,
   );
   assert.equal(deterministicProfileAnswer("confirmation"), "Yes");
 });

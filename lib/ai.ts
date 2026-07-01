@@ -172,6 +172,18 @@ export function classifyQuestion(question: string) {
   }
 
   if (
+    (text.includes("year") ||
+      text.includes("yrs") ||
+      text.includes("y.o.e") ||
+      text.includes("yoe")) &&
+    (text.includes("experience") ||
+      text.includes("exp") ||
+      text.includes("worked"))
+  ) {
+    return "experience_years";
+  }
+
+  if (
     text.includes("education") ||
     text.includes("qualification") ||
     text.includes("degree") ||
@@ -359,6 +371,35 @@ export function enforceKeywordCoverage(answer: string, jdText = "") {
   return `${answer} Relevant overlap includes ${selected}.`;
 }
 
+function parseProfileYearMonth(value: string) {
+  const match = value.match(/^(\d{4})(?:-(\d{2}))?/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2] ?? "01") - 1,
+  };
+}
+
+function roundedProfileExperienceYears() {
+  const profile = getProfile();
+  const starts = profile.experience
+    .map((item) => parseProfileYearMonth(item.start))
+    .filter((item): item is { year: number; month: number } => item !== null)
+    .sort((a, b) => a.year - b.year || a.month - b.month);
+  const earliest = starts[0];
+  if (!earliest) {
+    return null;
+  }
+
+  const now = new Date();
+  const elapsedMonths =
+    (now.getFullYear() - earliest.year) * 12 + now.getMonth() - earliest.month;
+  return String(Math.max(1, Math.round(elapsedMonths / 12)));
+}
+
 export function deterministicProfileAnswer(category: string) {
   const profile = getProfile();
   const currentExperience =
@@ -384,6 +425,8 @@ export function deterministicProfileAnswer(category: string) {
       return currentExperience?.company ?? null;
     case "current_title":
       return currentExperience?.title ?? null;
+    case "experience_years":
+      return roundedProfileExperienceYears();
     case "education":
       return profile.education
         .map((item) =>
@@ -489,6 +532,7 @@ export function enforceAnswerSpecificity({
       "location",
       "current_company",
       "current_title",
+      "experience_years",
       "education",
       "confirmation",
       "option_choice",
