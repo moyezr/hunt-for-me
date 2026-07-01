@@ -3,7 +3,11 @@ import { countSentMessagesToday, createContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
-import { defaultPlatformForChannel, isOutreachChannel } from "@/lib/validation";
+import {
+  defaultPlatformForChannel,
+  isOutreachChannel,
+  isUsableOutreachContact,
+} from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -22,6 +26,15 @@ export async function POST(request: Request) {
 
     if (!body.name?.trim() || !body.title?.trim() || !body.company?.trim()) {
       return jsonError("Name, title, and company are required", 400);
+    }
+
+    if (
+      !isUsableOutreachContact({
+        company: body.company,
+        title: body.title,
+      })
+    ) {
+      return jsonError("Detected company and title are required", 400);
     }
 
     if (body.channel && !isOutreachChannel(body.channel)) {

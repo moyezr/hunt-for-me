@@ -468,6 +468,7 @@ const aliasCsv = [
   `Runtime Alias ${suffix},Founder,Runtime Alias ${suffix},https://linkedin.com/in/runtime-alias-${suffix},hiring agent builders`,
 ].join("\n");
 const aliasImport = await api<{
+  skipped: number;
   contacts: {
     id: string;
     platform: string;
@@ -476,11 +477,32 @@ const aliasImport = await api<{
   }[];
 }>("/api/contacts/import", postJson({ csv: aliasCsv }));
 if (
+  aliasImport.skipped !== 0 ||
   aliasImport.contacts[0].platform !== "linkedin" ||
   !aliasImport.contacts[0].profileUrl.includes("runtime-alias") ||
   aliasImport.contacts[0].notes !== "hiring agent builders"
 ) {
   throw new Error("Contact import aliases did not preserve context");
+}
+const placeholderImport = await api<{
+  imported: number;
+  skipped: number;
+  contacts: unknown[];
+}>(
+  "/api/contacts/import",
+  postJson({
+    csv: [
+      "name,title,company,platform",
+      `Runtime Placeholder ${suffix},Founder,Unknown company,linkedin`,
+    ].join("\n"),
+  }),
+);
+if (
+  placeholderImport.imported !== 0 ||
+  placeholderImport.skipped !== 1 ||
+  placeholderImport.contacts.length !== 0
+) {
+  throw new Error("Contact import did not skip placeholder companies");
 }
 await apiFailure(
   `/api/contacts/${aliasImport.contacts[0].id}`,
@@ -541,6 +563,17 @@ if (
   throw new Error("Duplicate outreach draft did not include company context");
 }
 
+await apiFailure(
+  "/api/message",
+  postJson({
+    name: `Runtime Placeholder ${suffix}`,
+    title: "Founder",
+    company: "Unknown company",
+    channel: "linkedin_note",
+  }),
+  400,
+);
+
 const batchDrafts = await api<{
   drafts: {
     index: number;
@@ -594,6 +627,21 @@ if (
 ) {
   throw new Error("Batch outreach drafts did not include company context");
 }
+
+await apiFailure(
+  "/api/messages",
+  postJson({
+    channel: "linkedin_note",
+    contacts: [
+      {
+        name: `Runtime Placeholder Batch ${suffix}`,
+        title: "Open role",
+        company: `Runtime Placeholder Batch ${suffix}`,
+      },
+    ],
+  }),
+  400,
+);
 
 const emailDrafts = await api<{
   drafts: {

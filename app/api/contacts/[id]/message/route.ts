@@ -3,7 +3,7 @@ import { addMessageToContact, getContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
-import { isOutreachChannel } from "@/lib/validation";
+import { isOutreachChannel, isUsableOutreachContact } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -21,6 +21,15 @@ export async function POST(
 
     if (body.channel && !isOutreachChannel(body.channel)) {
       return jsonError("Invalid outreach channel", 400);
+    }
+
+    if (
+      !isUsableOutreachContact({
+        company: contact.company,
+        title: contact.title,
+      })
+    ) {
+      return jsonError("Detected company and title are required", 400);
     }
 
     const channel = body.channel ?? "linkedin_note";

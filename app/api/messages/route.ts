@@ -4,7 +4,11 @@ import { addMessageToContact, createContact, getContact } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/http";
 import { readRequestBody } from "@/lib/request";
 import type { OutreachMessage } from "@/lib/types";
-import { defaultPlatformForChannel, isOutreachChannel } from "@/lib/validation";
+import {
+  defaultPlatformForChannel,
+  isOutreachChannel,
+  isUsableOutreachContact,
+} from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -45,17 +49,23 @@ export async function POST(request: Request) {
 
     const invalidContact = contacts.find((contact) => {
       if (contact.id?.trim()) {
-        return false;
+        const existingContact = getContact(contact.id);
+        return !isUsableOutreachContact({
+          company: existingContact.company,
+          title: existingContact.title,
+        });
       }
 
       return (
         !contact.name?.trim() ||
-        !contact.title?.trim() ||
-        !contact.company?.trim()
+        !isUsableOutreachContact({
+          company: contact.company,
+          title: contact.title,
+        })
       );
     });
     if (invalidContact) {
-      return jsonError("Every new contact needs name, title, and company", 400);
+      return jsonError("Every contact needs a detected company and title", 400);
     }
 
     const drafts = await Promise.all(

@@ -51,6 +51,7 @@ import {
   isOutreachChannel,
   isScrapePlatform,
   isUsableApplicationContext,
+  isUsableOutreachContact,
 } from "@/lib/validation";
 
 test("classifies salary questions", () => {
@@ -471,6 +472,30 @@ test("validates usable application context", () => {
   );
 });
 
+test("validates usable outreach contact context", () => {
+  assert.equal(
+    isUsableOutreachContact({
+      company: "SignalWorks AI",
+      title: "Founder",
+    }),
+    true,
+  );
+  assert.equal(
+    isUsableOutreachContact({
+      company: "Unknown company",
+      title: "Founder",
+    }),
+    false,
+  );
+  assert.equal(
+    isUsableOutreachContact({
+      company: "SignalWorks AI",
+      title: "Open role",
+    }),
+    false,
+  );
+});
+
 test("maps outreach channels to default contact platforms", () => {
   assert.equal(defaultPlatformForChannel("linkedin_note"), "linkedin");
   assert.equal(defaultPlatformForChannel("linkedin_dm"), "linkedin");
@@ -641,6 +666,14 @@ test("normalizes flexible contact import headers", () => {
     notes: "hiring applied AI engineers",
   });
   assert.equal(normalizeContactImportRow({ name: "Missing Title" }), null);
+  assert.equal(
+    normalizeContactImportRow({
+      name: "Asha Rao",
+      title: "Founder",
+      company: "Unknown company",
+    }),
+    null,
+  );
 });
 
 test("outreach queues exclude replied and inactive contacts", () => {

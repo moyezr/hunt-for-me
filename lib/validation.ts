@@ -28,6 +28,8 @@ const outreachChannels = [
 const scrapePlatforms = ["naukri", "indeed", "wellfound"];
 const placeholderApplicationCompanies = ["unknown company"];
 const placeholderApplicationRoles = ["open role"];
+const placeholderContactCompanies = ["unknown company"];
+const placeholderContactTitles = ["open role"];
 
 export function isJobStatus(value: unknown): value is JobStatus {
   return typeof value === "string" && jobStatuses.includes(value);
@@ -83,5 +85,23 @@ export function isUsableApplicationContext({
     Boolean(normalizedRole) &&
     !placeholderApplicationCompanies.includes(normalizedCompany) &&
     !placeholderApplicationRoles.includes(normalizedRole)
+  );
+}
+
+export function isUsableOutreachContact({
+  company,
+  title,
+}: {
+  company?: string;
+  title?: string;
+}) {
+  const normalizedCompany = company?.trim().toLowerCase() ?? "";
+  const normalizedTitle = title?.trim().toLowerCase() ?? "";
+
+  return (
+    Boolean(normalizedCompany) &&
+    Boolean(normalizedTitle) &&
+    !placeholderContactCompanies.includes(normalizedCompany) &&
+    !placeholderContactTitles.includes(normalizedTitle)
   );
 }

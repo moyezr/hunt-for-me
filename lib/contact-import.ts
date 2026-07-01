@@ -1,3 +1,5 @@
+import { isUsableOutreachContact } from "@/lib/validation";
+
 type ContactImportRow = Record<string, string>;
 
 function firstValue(row: ContactImportRow, keys: string[]) {
@@ -45,7 +47,7 @@ export function normalizeContactImportRow(row: ContactImportRow) {
     "company_name",
   ]);
 
-  if (!name || !title || !company) {
+  if (!name || !isUsableOutreachContact({ company, title })) {
     return null;
   }
 
