@@ -104,6 +104,26 @@ await apiFailure(
   400,
 );
 
+await apiFailure(
+  "/api/answer",
+  postJson({
+    question: "Why do you want to join us?",
+    company: "Unknown company",
+    role: "Applied AI Engineer",
+  }),
+  400,
+);
+
+await apiFailure(
+  "/api/answers",
+  postJson({
+    questions: [{ id: "name", question: "Full name" }],
+    company: "Runtime Smoke",
+    role: "Open role",
+  }),
+  400,
+);
+
 const salary = await api<{ answer: string }>(
   "/api/answer",
   postJson({

@@ -26,6 +26,8 @@ const outreachChannels = [
 ];
 
 const scrapePlatforms = ["naukri", "indeed", "wellfound"];
+const placeholderApplicationCompanies = ["unknown company"];
+const placeholderApplicationRoles = ["open role"];
 
 export function isJobStatus(value: unknown): value is JobStatus {
   return typeof value === "string" && jobStatuses.includes(value);
@@ -64,4 +66,22 @@ export function defaultPlatformForChannel(channel: OutreachMessage["channel"]) {
 
 export function isScrapePlatform(value: unknown): value is ScrapePlatform {
   return typeof value === "string" && scrapePlatforms.includes(value);
+}
+
+export function isUsableApplicationContext({
+  company,
+  role,
+}: {
+  company?: string;
+  role?: string;
+}) {
+  const normalizedCompany = company?.trim().toLowerCase() ?? "";
+  const normalizedRole = role?.trim().toLowerCase() ?? "";
+
+  return (
+    Boolean(normalizedCompany) &&
+    Boolean(normalizedRole) &&
+    !placeholderApplicationCompanies.includes(normalizedCompany) &&
+    !placeholderApplicationRoles.includes(normalizedRole)
+  );
 }

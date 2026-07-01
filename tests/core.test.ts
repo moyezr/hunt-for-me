@@ -50,6 +50,7 @@ import {
   isJobStatus,
   isOutreachChannel,
   isScrapePlatform,
+  isUsableApplicationContext,
 } from "@/lib/validation";
 
 test("classifies salary questions", () => {
@@ -444,6 +445,30 @@ test("validates API status, outreach channel, and scraper platform enums", () =>
   assert.equal(isOutreachChannel("sms"), false);
   assert.equal(isScrapePlatform("wellfound"), true);
   assert.equal(isScrapePlatform("linkedin"), false);
+});
+
+test("validates usable application context", () => {
+  assert.equal(
+    isUsableApplicationContext({
+      company: "SignalWorks AI",
+      role: "Applied AI Engineer",
+    }),
+    true,
+  );
+  assert.equal(
+    isUsableApplicationContext({
+      company: "Unknown company",
+      role: "Applied AI Engineer",
+    }),
+    false,
+  );
+  assert.equal(
+    isUsableApplicationContext({
+      company: "SignalWorks AI",
+      role: "Open role",
+    }),
+    false,
+  );
 });
 
 test("maps outreach channels to default contact platforms", () => {
